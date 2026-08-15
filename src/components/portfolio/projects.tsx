@@ -1,5 +1,11 @@
 import { Link } from "@tanstack/react-router";
-import { ExternalLink, Github, ImageOff, Star } from "lucide-react";
+import {
+  ArrowUpRight,
+  ExternalLink,
+  Github,
+  ImageOff,
+  Star,
+} from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { EmptyState, Section } from "@/components/portfolio/section";
@@ -17,17 +23,22 @@ export function Projects({ data }: { data: PortfolioData }) {
     () => [
       "All",
       ...Array.from(
-        new Set(data.projects.map((p) => text(p["category"])).filter(Boolean)),
+        new Set(
+          data.projects
+            .map((project) => text(project["category"]))
+            .filter(Boolean),
+        ),
       ),
     ],
     [data.projects],
   );
+
   const [active, setActive] = useState("All");
   const [onlyFeatured, setOnlyFeatured] = useState(false);
 
   const visible = data.projects.filter(
     (project) =>
-      (active === "All" || project["category"] === active) &&
+      (active === "All" || text(project["category"]) === active) &&
       (!onlyFeatured || project["featured"] === true),
   );
 
@@ -36,36 +47,46 @@ export function Projects({ data }: { data: PortfolioData }) {
       id="projects"
       eyebrow="Projects"
       title="Things I have built"
-      description="Every project below is loaded from MongoDB through the site's API — nothing here is hardcoded."
+      description="A selection of projects where I turn ideas into practical, useful digital experiences."
     >
       {data.projects.length ? (
-        <div className="mb-8 flex flex-wrap items-center gap-2">
-          {categories.map((category) => (
-            <button
-              key={category}
-              type="button"
-              onClick={() => setActive(category)}
-              aria-pressed={active === category}
-              className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${
-                active === category
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-border text-muted-foreground hover:bg-surface-light hover:text-foreground"
-              }`}
-            >
-              {category}
-            </button>
-          ))}
+        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-wrap gap-2">
+            {categories.map((category) => {
+              const isActive = active === category;
+
+              return (
+                <button
+                  key={category}
+                  type="button"
+                  onClick={() => setActive(category)}
+                  aria-pressed={isActive}
+                  className={`rounded-xl border px-3.5 py-2 text-xs font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
+                    isActive
+                      ? "border-primary bg-primary text-primary-foreground shadow-sm"
+                      : "border-border/70 bg-surface/40 text-muted-foreground hover:-translate-y-0.5 hover:border-border hover:bg-surface-light hover:text-foreground"
+                  }`}
+                >
+                  {category}
+                </button>
+              );
+            })}
+          </div>
+
           <button
             type="button"
-            onClick={() => setOnlyFeatured((v) => !v)}
+            onClick={() => setOnlyFeatured((value) => !value)}
             aria-pressed={onlyFeatured}
-            className={`ml-auto inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${
+            className={`inline-flex w-fit items-center gap-2 rounded-xl border px-3.5 py-2 text-xs font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
               onlyFeatured
-                ? "border-accent text-accent"
-                : "border-border text-muted-foreground hover:bg-surface-light hover:text-foreground"
+                ? "border-accent/50 bg-accent/10 text-accent"
+                : "border-border/70 bg-surface/40 text-muted-foreground hover:-translate-y-0.5 hover:border-border hover:bg-surface-light hover:text-foreground"
             }`}
           >
-            <Star className="size-3.5" aria-hidden />
+            <Star
+              className={`size-3.5 ${onlyFeatured ? "fill-current" : ""}`}
+              aria-hidden
+            />
             Featured only
           </button>
         </div>
@@ -73,8 +94,8 @@ export function Projects({ data }: { data: PortfolioData }) {
 
       {visible.length === 0 ? (
         <EmptyState
-          message="No projects have been added yet."
-          hint="Sign in to the admin dashboard and add your first project."
+          message="No projects match these filters."
+          hint="Try another category or turn off the featured filter."
         />
       ) : (
         <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
@@ -82,7 +103,7 @@ export function Projects({ data }: { data: PortfolioData }) {
             <ProjectCard
               key={idOf(project)}
               project={project}
-              delay={index * 60}
+              delay={index * 70}
             />
           ))}
         </div>
@@ -101,51 +122,91 @@ export function ProjectCard({
   const title = text(project["title"]);
   const image = text(project["image"]);
   const slug = text(project["slug"]);
-  const technologies = list(project["technologies"]).slice(0, 5);
+  const category = text(project["category"]);
+  const description = text(project["shortDescription"]);
+  const githubUrl = text(project["githubUrl"]);
+  const liveUrl = text(project["liveUrl"]);
+  const technologies = list(project["technologies"]).slice(0, 6);
+  const featured = project["featured"] === true;
 
   return (
     <Reveal
       as="article"
       delay={delay}
-      className="surface-card group flex flex-col overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:border-primary/60"
+      className={`surface-card group flex h-full flex-col overflow-hidden transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl ${
+        featured
+          ? "border-primary/30 hover:border-primary/60"
+          : "hover:border-border"
+      }`}
     >
-      <div className="relative aspect-video overflow-hidden bg-surface-light">
+      <div className="relative aspect-16/10 overflow-hidden bg-surface-light">
         {image ? (
           <img
             src={image}
             alt={`${title} preview`}
             loading="lazy"
-            className="size-full object-cover transition-transform duration-500 group-hover:scale-105"
+            width={800}
+            height={500}
+            className="size-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.045]"
           />
         ) : (
-          <div className="grid size-full place-items-center text-muted-foreground">
-            <ImageOff className="size-6" aria-hidden />
+          <div className="relative grid size-full place-items-center bg-linear-to-br from-surface-light to-surface">
+            <ImageOff className="size-7 text-muted-foreground/40" aria-hidden />
           </div>
         )}
-        {project["featured"] ? (
-          <span className="absolute top-3 left-3 inline-flex items-center gap-1 rounded-md bg-primary px-2 py-1 text-[10px] font-medium text-primary-foreground">
-            <Star className="size-3" aria-hidden /> Featured
+
+        <div
+          className="pointer-events-none absolute inset-0 bg-linear-to-t from-black/35 via-transparent to-black/5 opacity-60"
+          aria-hidden
+        />
+
+        {featured ? (
+          <span className="absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-background/75 px-2.5 py-1.5 text-[10px] font-semibold text-foreground shadow-lg backdrop-blur-md">
+            <Star className="size-3 fill-primary text-primary" aria-hidden />
+            Featured
           </span>
+        ) : null}
+
+        {category ? (
+          <span className="absolute bottom-4 left-4 rounded-lg border border-white/10 bg-background/75 px-2.5 py-1.5 font-mono text-[10px] uppercase tracking-wider text-white/85 shadow-lg backdrop-blur-md">
+            {category}
+          </span>
+        ) : null}
+
+        {slug ? (
+          <Link
+            to="/projects/$slug"
+            params={{ slug }}
+            aria-label={`View ${title} project details`}
+            className="absolute right-4 top-4 grid size-9 translate-y-1 place-items-center rounded-lg border border-white/10 bg-background/75 text-white opacity-0 shadow-lg backdrop-blur-md transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100 focus-visible:translate-y-0 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          >
+            <ArrowUpRight className="size-4" aria-hidden />
+          </Link>
         ) : null}
       </div>
 
-      <div className="flex flex-1 flex-col p-5">
-        <p className="font-mono text-[11px] tracking-wide text-accent uppercase">
-          {text(project["category"])}
-        </p>
-        <h3 className="mt-2 font-display text-lg leading-snug font-semibold">
-          {title}
-        </h3>
-        <p className="mt-2 line-clamp-3 text-sm text-muted-foreground">
-          {text(project["shortDescription"])}
-        </p>
+      <div className="flex flex-1 flex-col p-5 sm:p-6">
+        <div className="min-w-0">
+          <h3 className="font-display text-lg font-semibold leading-snug tracking-tight text-foreground">
+            {title}
+          </h3>
+
+          {description ? (
+            <p className="mt-2.5 line-clamp-3 text-sm leading-6 text-muted-foreground">
+              {description}
+            </p>
+          ) : null}
+        </div>
 
         {technologies.length ? (
-          <ul className="mt-4 flex flex-wrap gap-1.5">
+          <ul
+            className="mt-5 flex flex-wrap gap-1.5"
+            aria-label={`${title} technologies`}
+          >
             {technologies.map((tech) => (
               <li
                 key={tech}
-                className="rounded-md border border-border px-2 py-0.5 font-mono text-[10px] text-muted-foreground"
+                className="rounded-md border border-border/70 bg-surface-light/40 px-2 py-1 font-mono text-[10px] text-muted-foreground transition-colors duration-200 group-hover:border-border group-hover:text-foreground"
               >
                 {tech}
               </li>
@@ -153,34 +214,44 @@ export function ProjectCard({
           </ul>
         ) : null}
 
-        <div className="mt-5 flex flex-wrap items-center gap-2 pt-1">
+        <div className="mt-auto flex flex-wrap items-center gap-2 pt-6">
           {slug ? (
             <Link
               to="/projects/$slug"
               params={{ slug }}
-              className="rounded-lg bg-surface-light px-3 py-1.5 text-xs font-medium transition-colors hover:bg-primary hover:text-primary-foreground"
+              className="group/button inline-flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-2 text-xs font-semibold text-primary-foreground shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             >
               View details
+              <ArrowUpRight
+                className="size-3.5 transition-transform duration-200 group-hover/button:translate-x-0.5 group-hover/button:-translate-y-0.5"
+                aria-hidden
+              />
             </Link>
           ) : null}
-          {text(project["githubUrl"]) ? (
+
+          {githubUrl ? (
             <a
-              href={text(project["githubUrl"])}
+              href={githubUrl}
               target="_blank"
               rel="noreferrer noopener"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
+              aria-label={`${title} source code on GitHub`}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border/70 px-3 py-2 text-xs font-medium text-muted-foreground transition-all duration-200 hover:border-border hover:bg-surface-light hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             >
-              <Github className="size-3.5" aria-hidden /> Code
+              <Github className="size-3.5" aria-hidden />
+              Code
             </a>
           ) : null}
-          {text(project["liveUrl"]) ? (
+
+          {liveUrl ? (
             <a
-              href={text(project["liveUrl"])}
+              href={liveUrl}
               target="_blank"
               rel="noreferrer noopener"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
+              aria-label={`${title} live website`}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border/70 px-3 py-2 text-xs font-medium text-muted-foreground transition-all duration-200 hover:border-border hover:bg-surface-light hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             >
-              <ExternalLink className="size-3.5" aria-hidden /> Live
+              <ExternalLink className="size-3.5" aria-hidden />
+              Live
             </a>
           ) : null}
         </div>

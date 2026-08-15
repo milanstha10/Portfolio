@@ -1,3 +1,5 @@
+import { ArrowUpRight } from "lucide-react";
+
 import { Section, EmptyState } from "@/components/portfolio/section";
 import { Icon } from "@/components/ui/icon";
 import { Reveal } from "@/components/ui/reveal";
@@ -13,6 +15,15 @@ const CATEGORY_ICONS: Record<string, string> = {
   Other: "Sparkles",
 };
 
+const CATEGORY_COLORS: Record<string, string> = {
+  Frontend: "text-primary",
+  Backend: "text-secondary",
+  Database: "text-accent",
+  Programming: "text-primary",
+  Tools: "text-secondary",
+  Other: "text-accent",
+};
+
 export function Skills({ data }: { data: PortfolioData }) {
   const grouped = SKILL_CATEGORIES.map((category) => ({
     category,
@@ -24,7 +35,7 @@ export function Skills({ data }: { data: PortfolioData }) {
       id="skills"
       eyebrow="Skills"
       title="Technologies I work with"
-      description="Grouped by area, with an honest indication of how comfortable I currently am with each one."
+      description="A growing toolkit built through projects, coursework, experimentation, and continuous learning."
     >
       {grouped.length === 0 ? (
         <EmptyState
@@ -36,21 +47,46 @@ export function Skills({ data }: { data: PortfolioData }) {
           {grouped.map((group, index) => (
             <Reveal
               key={group.category}
-              className="surface-card p-6"
-              delay={index * 60}
+              className="surface-card group relative overflow-hidden p-6 transition-all duration-300 hover:-translate-y-1 hover:border-border"
+              delay={index * 70}
             >
-              <div className="flex items-center gap-3">
-                <span className="grid size-9 place-items-center rounded-lg border border-border bg-surface-light">
-                  <Icon
-                    name={CATEGORY_ICONS[group.category]}
-                    className="size-4 text-primary"
-                  />
-                </span>
-                <h3 className="font-display text-base font-semibold">
-                  {group.category}
-                </h3>
+              <div
+                className="pointer-events-none absolute -right-16 -top-16 size-36 rounded-full bg-primary/5 blur-3xl transition-opacity duration-300 group-hover:opacity-100"
+                aria-hidden
+              />
+
+              <div className="relative flex items-start justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <span className="grid size-10 shrink-0 place-items-center rounded-xl border border-border/70 bg-surface-light/70">
+                    <Icon
+                      name={CATEGORY_ICONS[group.category] ?? "Sparkles"}
+                      className={`size-4 ${
+                        CATEGORY_COLORS[group.category] ?? "text-primary"
+                      }`}
+                    />
+                  </span>
+
+                  <div>
+                    <h3 className="font-display text-base font-semibold tracking-tight">
+                      {group.category}
+                    </h3>
+
+                    <p className="mt-0.5 text-[11px] text-muted-foreground">
+                      {group.skills.length}{" "}
+                      {group.skills.length === 1
+                        ? "technology"
+                        : "technologies"}
+                    </p>
+                  </div>
+                </div>
+
+                <ArrowUpRight
+                  className="size-4 text-muted-foreground/40 transition-all duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-foreground"
+                  aria-hidden
+                />
               </div>
-              <ul className="mt-5 space-y-4">
+
+              <ul className="relative mt-6 grid gap-2">
                 {group.skills.map((skill) => (
                   <SkillRow key={String(skill["_id"])} skill={skill} />
                 ))}
@@ -65,36 +101,60 @@ export function Skills({ data }: { data: PortfolioData }) {
 
 function SkillRow({ skill }: { skill: Rec }) {
   const percentage =
-    typeof skill["percentage"] === "number" ? skill["percentage"] : null;
+    typeof skill["percentage"] === "number"
+      ? Math.min(100, Math.max(0, skill["percentage"]))
+      : null;
+
+  const name = text(skill["name"]);
+  const level = text(skill["level"]);
+  const icon = text(skill["icon"]);
+
   return (
-    <li>
+    <li className="group/skill rounded-xl border border-border/60 bg-surface-light/30 p-3 transition-all duration-200 hover:border-border hover:bg-surface-light/70">
       <div className="flex items-center justify-between gap-3">
-        <span className="flex items-center gap-2 text-sm font-medium text-foreground">
-          {text(skill["icon"]) ? (
-            <Icon
-              name={text(skill["icon"])}
-              className="size-3.5 text-muted-foreground"
-            />
+        <span className="flex min-w-0 items-center gap-2.5">
+          {icon ? (
+            <span className="grid size-7 shrink-0 place-items-center rounded-lg border border-border/60 bg-surface">
+              <Icon
+                name={icon}
+                className="size-3.5 text-muted-foreground transition-colors group-hover/skill:text-foreground"
+              />
+            </span>
           ) : null}
-          {text(skill["name"])}
+
+          <span className="truncate text-sm font-medium text-foreground">
+            {name}
+          </span>
         </span>
-        <span className="font-mono text-[11px] text-muted-foreground">
-          {text(skill["level"])}
-        </span>
+
+        {level ? (
+          <span className="shrink-0 rounded-md border border-border/60 px-2 py-1 font-mono text-[9px] uppercase tracking-wider text-muted-foreground">
+            {level}
+          </span>
+        ) : null}
       </div>
+
       {percentage !== null ? (
-        <div
-          className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface-light"
-          role="progressbar"
-          aria-label={`${text(skill["name"])} proficiency`}
-          aria-valuenow={percentage}
-          aria-valuemin={0}
-          aria-valuemax={100}
-        >
+        <div className="mt-3">
           <div
-            className="h-full rounded-full bg-primary transition-[width] duration-700"
-            style={{ width: `${percentage}%` }}
-          />
+            className="h-1 overflow-hidden rounded-full bg-surface"
+            role="progressbar"
+            aria-label={`${name} proficiency`}
+            aria-valuenow={percentage}
+            aria-valuemin={0}
+            aria-valuemax={100}
+          >
+            <div
+              className="h-full rounded-full bg-linear-to-r from-primary to-secondary transition-[width] duration-700 ease-out"
+              style={{ width: `${percentage}%` }}
+            />
+          </div>
+
+          <div className="mt-1.5 flex justify-end">
+            <span className="font-mono text-[9px] text-muted-foreground/70">
+              {percentage}%
+            </span>
+          </div>
         </div>
       ) : null}
     </li>
