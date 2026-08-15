@@ -1,182 +1,285 @@
+import {
+  MongoClient,
+  type Collection,
+  type Db,
+  ObjectId,
+  type Document,
+  type Sort,
+} from "mongodb";
+
 export type Doc = Record<string, unknown>;
 
 export class MongoConfigError extends Error {
-  constructor(missing: string[]) {
+  constructor() {
     super(
-      `MongoDB is not configured. Missing environment variable(s): ${missing.join(", ")}. ` +
-        `Add them in project settings, then reload.`,
+      "MongoDB is not configured. Add MONGODB_URI and MONGODB_DB to your server environment.",
     );
     this.name = "MongoConfigError";
   }
 }
 
-export class MongoRequestError extends Error {
-  constructor(
-    public status: number,
-    message: string,
-  ) {
-    super(`MongoDB request failed (${status}): ${message}`);
-    this.name = "MongoRequestError";
+let client: MongoClient | null = null;
+let database: Db | null = null;
+let connectionPromise: Promise<MongoClient> | null = null;
+
+function getConfig(): {
+  uri: string;
+  databaseName: string;
+} {
+  const uri = process.env["MONGODB_URI"];
+  const databaseName = process.env["MONGODB_DB"];
+
+  if (!uri || !databaseName) {
+    throw new MongoConfigError();
   }
+
+  return {
+    uri,
+    databaseName,
+  };
 }
 
-function config() {
-  // Read env inside the function: the runtime injects it per request.
-  const cfg = {
-    url: process.env["MONGODB_DATA_API_URL"] ?? "",
-    apiKey: process.env["MONGODB_DATA_API_KEY"] ?? "",
-    database: process.env["MONGODB_DB"] ?? "",
-    dataSource: process.env["MONGODB_DATA_SOURCE"] ?? "",
+async function getClient(): Promise<MongoClient> {
+  if (client) {
+    return client;
+  }
+
+  if (!connectionPromise) {
+    const { uri } = getConfig();
+
+    const nextClient = new MongoClient(uri);
+
+    connectionPromise = nextClient.connect().then((connected) => {
+      client = connected;
+      return connected;
+    });
+  }
+
+  return connectionPromise;
+}
+
+async function getDb(): Promise<Db> {
+  if (database) {
+    return database;
+  }
+
+  const { databaseName } = getConfig();
+  const connectedClient = await getClient();
+
+  database = connectedClient.db(databaseName);
+
+  return database;
+}
+
+async function collection(name: string): Promise<Collection<Document>> {
+  const db = await getDb();
+  return db.collection<Document>(name);
+}
+
+/**
+ * Convert MongoDB values into values that can safely cross the
+ * TanStack Start server-function boundary.
+ *
+ * ObjectIds become strings.
+ * Dates become ISO strings.
+ * Nested arrays/objects are converted recursively.
+ */
+function serializeValue(value: unknown): unknown {
+  if (value instanceof ObjectId) {
+    return value.toString();
+  }
+
+  if (value instanceof Date) {
+    return value.toISOString();
+  }
+
+  if (Array.isArray(value)) {
+    return value.map(serializeValue);
+  }
+
+  if (value !== null && typeof value === "object") {
+    const result: Record<string, unknown> = {};
+
+    for (const [key, nestedValue] of Object.entries(value)) {
+      result[key] = serializeValue(nestedValue);
+    }
+
+    return result;
+  }
+
+  return value;
+}
+
+function serializeDocument<T>(document: T): T {
+  return serializeValue(document) as T;
+}
+
+/**
+ * Works with both MongoDB ObjectId strings and string IDs.
+ */
+export function byId(id: string): Doc {
+  if (ObjectId.isValid(id) && String(new ObjectId(id)) === id) {
+    return {
+      _id: new ObjectId(id),
+    };
+  }
+
+  return {
+    _id: id,
   };
-  const missing = Object.entries(cfg)
-    .filter(([, v]) => !v)
-    .map(
-      ([k]) =>
-        ({
-          url: "MONGODB_DATA_API_URL",
-          apiKey: "MONGODB_DATA_API_KEY",
-          database: "MONGODB_DB",
-          dataSource: "MONGODB_DATA_SOURCE",
-        })[k] as string,
-    );
-  if (missing.length) throw new MongoConfigError(missing);
-  return cfg;
 }
 
 export function isMongoConfigured(): boolean {
-  try {
-    config();
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-async function action<T>(name: string, payload: Doc): Promise<T> {
-  const cfg = config();
-  const res = await fetch(`${cfg.url.replace(/\/$/, "")}/action/${name}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Access-Control-Request-Headers": "*",
-      apiKey: cfg.apiKey,
-    },
-    body: JSON.stringify({
-      dataSource: cfg.dataSource,
-      database: cfg.database,
-      ...payload,
-    }),
-  });
-
-  if (!res.ok) {
-    const text = await res.text();
-    // Never leak the API key or full backend error to the client.
-    console.error("[mongo]", name, res.status, text.slice(0, 500));
-    throw new MongoRequestError(
-      res.status,
-      res.status === 401 ? "unauthorized" : "request rejected",
-    );
-  }
-  return (await res.json()) as T;
-}
-
-/** Build an `_id` filter that works for both ObjectId and string ids. */
-export function byId(id: string): Doc {
-  return /^[a-f\d]{24}$/i.test(id) ? { _id: { $oid: id } } : { _id: id };
+  return Boolean(process.env["MONGODB_URI"] && process.env["MONGODB_DB"]);
 }
 
 export const db = {
   async find<T = Doc>(
-    collection: string,
+    name: string,
     filter: Doc = {},
-    opts: { sort?: Doc; limit?: number; skip?: number; projection?: Doc } = {},
+    opts: {
+      sort?: Sort;
+      limit?: number;
+      skip?: number;
+      projection?: Doc;
+    } = {},
   ): Promise<T[]> {
-    const r = await action<{ documents: T[] }>("find", {
-      collection,
-      filter,
-      ...opts,
-    });
-    return r.documents ?? [];
+    const col = await collection(name);
+
+    let cursor = col.find(filter);
+
+    if (opts.sort) {
+      cursor = cursor.sort(opts.sort);
+    }
+
+    if (typeof opts.skip === "number") {
+      cursor = cursor.skip(opts.skip);
+    }
+
+    if (typeof opts.limit === "number") {
+      cursor = cursor.limit(opts.limit);
+    }
+
+    if (opts.projection) {
+      cursor = cursor.project(opts.projection);
+    }
+
+    const documents = await cursor.toArray();
+
+    return documents.map((document) => serializeDocument(document)) as T[];
   },
 
   async findOne<T = Doc>(
-    collection: string,
+    name: string,
     filter: Doc,
     projection?: Doc,
   ): Promise<T | null> {
-    const r = await action<{ document: T | null }>("findOne", {
-      collection,
+    const col = await collection(name);
+
+    const document = await col.findOne(
       filter,
-      projection,
-    });
-    return r.document ?? null;
+      projection
+        ? {
+            projection,
+          }
+        : undefined,
+    );
+
+    if (!document) {
+      return null;
+    }
+
+    return serializeDocument(document) as T;
   },
 
-  async count(collection: string, filter: Doc = {}): Promise<number> {
-    const r = await action<{ documents: Array<{ n?: number }> }>("aggregate", {
-      collection,
-      pipeline: [{ $match: filter }, { $count: "n" }],
-    });
-    return r.documents?.[0]?.n ?? 0;
+  async count(name: string, filter: Doc = {}): Promise<number> {
+    const col = await collection(name);
+
+    return col.countDocuments(filter);
   },
 
-  async insertOne(collection: string, document: Doc): Promise<string> {
+  async insertOne(name: string, document: Doc): Promise<string> {
+    const col = await collection(name);
+
     const now = new Date().toISOString();
-    const r = await action<{ insertedId: string }>("insertOne", {
-      collection,
-      document: { ...document, createdAt: now, updatedAt: now },
+
+    const result = await col.insertOne({
+      ...document,
+      createdAt: now,
+      updatedAt: now,
     });
-    return r.insertedId;
+
+    return result.insertedId.toString();
   },
 
-  async updateOne(collection: string, filter: Doc, set: Doc): Promise<number> {
-    const r = await action<{ modifiedCount: number }>("updateOne", {
-      collection,
-      filter,
-      update: { $set: { ...set, updatedAt: new Date().toISOString() } },
-      upsert: false,
-    });
-    return r.modifiedCount ?? 0;
-  },
+  async insertMany(name: string, documents: Doc[]): Promise<number> {
+    if (documents.length === 0) {
+      return 0;
+    }
 
-  async upsertOne(collection: string, filter: Doc, set: Doc): Promise<void> {
-    await action("updateOne", {
-      collection,
-      filter,
-      update: {
-        $set: { ...set, updatedAt: new Date().toISOString() },
-        $setOnInsert: { createdAt: new Date().toISOString() },
-      },
-      upsert: true,
-    });
-  },
+    const col = await collection(name);
 
-  async deleteOne(collection: string, filter: Doc): Promise<number> {
-    const r = await action<{ deletedCount: number }>("deleteOne", {
-      collection,
-      filter,
-    });
-    return r.deletedCount ?? 0;
-  },
-
-  async deleteMany(collection: string, filter: Doc = {}): Promise<number> {
-    const r = await action<{ deletedCount: number }>("deleteMany", {
-      collection,
-      filter,
-    });
-    return r.deletedCount ?? 0;
-  },
-
-  async insertMany(collection: string, documents: Doc[]): Promise<number> {
     const now = new Date().toISOString();
-    const r = await action<{ insertedIds: string[] }>("insertMany", {
-      collection,
-      documents: documents.map((d) => ({
-        ...d,
+
+    const result = await col.insertMany(
+      documents.map((document) => ({
+        ...document,
         createdAt: now,
         updatedAt: now,
       })),
+    );
+
+    return result.insertedCount;
+  },
+
+  async updateOne(name: string, filter: Doc, set: Doc): Promise<number> {
+    const col = await collection(name);
+
+    const result = await col.updateOne(filter, {
+      $set: {
+        ...set,
+        updatedAt: new Date().toISOString(),
+      },
     });
-    return r.insertedIds?.length ?? 0;
+
+    return result.modifiedCount;
+  },
+
+  async upsertOne(name: string, filter: Doc, set: Doc): Promise<void> {
+    const col = await collection(name);
+
+    const now = new Date().toISOString();
+
+    await col.updateOne(
+      filter,
+      {
+        $set: {
+          ...set,
+          updatedAt: now,
+        },
+        $setOnInsert: {
+          createdAt: now,
+        },
+      },
+      {
+        upsert: true,
+      },
+    );
+  },
+
+  async deleteOne(name: string, filter: Doc): Promise<number> {
+    const col = await collection(name);
+
+    const result = await col.deleteOne(filter);
+
+    return result.deletedCount;
+  },
+
+  async deleteMany(name: string, filter: Doc = {}): Promise<number> {
+    const col = await collection(name);
+
+    const result = await col.deleteMany(filter);
+
+    return result.deletedCount;
   },
 };

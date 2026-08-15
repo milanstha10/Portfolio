@@ -248,6 +248,12 @@ export const messageSchema = z.object({
     .max(2000),
 });
 
+export interface Meta {
+  _id: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export type Project = z.infer<typeof projectSchema> & Meta;
 export type Skill = z.infer<typeof skillSchema> & Meta;
 export type Education = z.infer<typeof educationSchema> & Meta;
@@ -261,12 +267,6 @@ export type Settings = z.infer<typeof settingsSchema> & Partial<Meta>;
 export type Message = z.infer<typeof messageSchema> &
   Meta & { status: "unread" | "read" };
 
-export interface Meta {
-  _id: string;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
 export interface CollectionConfig {
   key: string;
   collection: string;
@@ -279,7 +279,13 @@ export interface CollectionConfig {
   searchFields: string[];
 }
 
-export const COLLECTIONS: Record<string, CollectionConfig> = {
+/**
+ * Do not type this as Record<string, CollectionConfig>.
+ *
+ * Keeping the literal object type allows keyof typeof COLLECTIONS to be the
+ * exact set of valid collection keys instead of generic string.
+ */
+export const COLLECTIONS = {
   projects: {
     key: "projects",
     collection: "projects",
@@ -339,6 +345,7 @@ export const COLLECTIONS: Record<string, CollectionConfig> = {
       { name: "order", label: "Display order", type: "number" },
     ],
   },
+
   skills: {
     key: "skills",
     collection: "skills",
@@ -379,6 +386,7 @@ export const COLLECTIONS: Record<string, CollectionConfig> = {
       { name: "order", label: "Display order", type: "number" },
     ],
   },
+
   education: {
     key: "education",
     collection: "education",
@@ -402,6 +410,7 @@ export const COLLECTIONS: Record<string, CollectionConfig> = {
       { name: "order", label: "Display order", type: "number" },
     ],
   },
+
   experience: {
     key: "experience",
     collection: "experience",
@@ -447,6 +456,7 @@ export const COLLECTIONS: Record<string, CollectionConfig> = {
       { name: "order", label: "Display order", type: "number" },
     ],
   },
+
   certifications: {
     key: "certifications",
     collection: "certifications",
@@ -473,6 +483,7 @@ export const COLLECTIONS: Record<string, CollectionConfig> = {
       { name: "order", label: "Display order", type: "number" },
     ],
   },
+
   achievements: {
     key: "achievements",
     collection: "achievements",
@@ -513,6 +524,7 @@ export const COLLECTIONS: Record<string, CollectionConfig> = {
       { name: "order", label: "Display order", type: "number" },
     ],
   },
+
   services: {
     key: "services",
     collection: "services",
@@ -534,6 +546,7 @@ export const COLLECTIONS: Record<string, CollectionConfig> = {
       { name: "order", label: "Display order", type: "number" },
     ],
   },
+
   socialLinks: {
     key: "socialLinks",
     collection: "socialLinks",
@@ -555,7 +568,7 @@ export const COLLECTIONS: Record<string, CollectionConfig> = {
       { name: "order", label: "Display order", type: "number" },
     ],
   },
-};
+} satisfies Record<string, CollectionConfig>;
 
 export const SINGLETONS = {
   profile: { collection: "profile", schema: profileSchema },
