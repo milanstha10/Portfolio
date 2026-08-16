@@ -9,5 +9,12 @@ export default defineConfig({
     tsconfigPaths: true,
   },
 
-  plugins: [tanstackStart(), viteReact(), tailwindcss(), nitro()],
+  plugins: [
+    tanstackStart(),
+    viteReact(),
+    tailwindcss(),
+    nitro({
+      preset: "vercel",
+    }),
+  ],
 });
