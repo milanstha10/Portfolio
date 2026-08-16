@@ -18,9 +18,6 @@ type ClientValue =
 /**
  * Convert arbitrary server-side data into a value that is safe to
  * serialize across the server-function boundary.
- *
- * MongoDB documents have already had ObjectIds normalized by mongo.server.ts,
- * but this also handles Dates and nested objects defensively.
  */
 function toClientValue(value: unknown): ClientValue {
   if (value === null) {
@@ -48,7 +45,9 @@ function toClientValue(value: unknown): ClientValue {
   }
 
   if (typeof value === "object") {
-    const result: { [key: string]: ClientValue } = {};
+    const result: {
+      [key: string]: ClientValue;
+    } = {};
 
     for (const [key, nestedValue] of Object.entries(value)) {
       result[key] = toClientValue(nestedValue);
@@ -57,10 +56,6 @@ function toClientValue(value: unknown): ClientValue {
     return result;
   }
 
-  /*
-   * Functions, symbols, bigint, undefined, etc. are not valid client
-   * values. Returning null keeps the server function serializable.
-   */
   return null;
 }
 
@@ -78,48 +73,57 @@ function toClientDocument(value: unknown): {
 
 /* ----------------------------- public API -------------------------------- */
 
-export const fetchPortfolio = createServerFn({ method: "GET" }).handler(
-  async () => {
-    const { getPublicContent } = await import("./data.server");
-    const { isMongoConfigured } = await import("../mongo/mongo.server");
+export const fetchPortfolio = createServerFn({
+  method: "GET",
+}).handler(async () => {
+  const { getPublicContent } = await import("./data.server");
 
-    if (!isMongoConfigured()) {
-      return {
-        configured: false as const,
-        content: null,
-        error: null,
-      };
-    }
+  const { isMongoConfigured } = await import("../mongo/mongo.server");
 
-    try {
-      const content = await getPublicContent();
+  if (!isMongoConfigured()) {
+    return {
+      configured: false as const,
+      content: null,
+      error: null,
+    };
+  }
 
-      return {
-        configured: true as const,
-        content: toClientDocument(content),
-        error: null,
-      };
-    } catch (error) {
-      console.error("[api] fetchPortfolio", error);
+  try {
+    const content = await getPublicContent();
 
-      return {
-        configured: true as const,
-        content: null,
-        error: "Could not reach the database.",
-      };
-    }
-  },
-);
+    return {
+      configured: true as const,
+      content: toClientDocument(content),
+      error: null,
+    };
+  } catch (error) {
+    console.error("[api] fetchPortfolio", error);
 
-export const fetchProject = createServerFn({ method: "GET" })
+    return {
+      configured: true as const,
+      content: null,
+      error: "Could not reach the database.",
+    };
+  }
+});
+
+export const fetchProject = createServerFn({
+  method: "GET",
+})
   .validator((input: { slug: string }) =>
-    z.object({ slug: z.string().min(1).max(120) }).parse(input),
+    z
+      .object({
+        slug: z.string().min(1).max(120),
+      })
+      .parse(input),
   )
   .handler(async ({ data }) => {
     const { getProjectBySlug } = await import("./data.server");
+
     const { getCurrentAdmin } = await import("../auth/auth.server");
 
     const admin = await getCurrentAdmin();
+
     const project = await getProjectBySlug(data.slug, Boolean(admin));
 
     return {
@@ -127,7 +131,9 @@ export const fetchProject = createServerFn({ method: "GET" })
     };
   });
 
-export const submitMessage = createServerFn({ method: "POST" })
+export const submitMessage = createServerFn({
+  method: "POST",
+})
   .validator((input: unknown) => messageSchema.parse(input))
   .handler(async ({ data }) => {
     const { createMessage } = await import("./data.server");
@@ -141,46 +147,50 @@ export const submitMessage = createServerFn({ method: "POST" })
 
 /* -------------------------------- auth -------------------------------- */
 
-export const authStatus = createServerFn({ method: "GET" }).handler(
-  async () => {
-    const { getCurrentAdmin, adminCount } = await import("../auth/auth.server");
-    const { isMongoConfigured } = await import("../mongo/mongo.server");
+export const authStatus = createServerFn({
+  method: "GET",
+}).handler(async () => {
+  const { getCurrentAdmin, adminCount } = await import("../auth/auth.server");
 
-    if (!isMongoConfigured()) {
-      return {
-        configured: false,
-        admin: null,
-        needsSetup: false,
-      };
-    }
+  const { isMongoConfigured } = await import("../mongo/mongo.server");
 
-    const admin = await getCurrentAdmin();
-
-    let needsSetup = false;
-
-    try {
-      needsSetup = (await adminCount()) === 0;
-    } catch {
-      needsSetup = false;
-    }
-
+  if (!isMongoConfigured()) {
     return {
-      configured: true,
-      admin,
-      needsSetup,
+      configured: false,
+      admin: null,
+      needsSetup: false,
     };
-  },
-);
+  }
+
+  const admin = await getCurrentAdmin();
+
+  let needsSetup = false;
+
+  try {
+    needsSetup = (await adminCount()) === 0;
+  } catch {
+    needsSetup = false;
+  }
+
+  return {
+    configured: true,
+    admin,
+    needsSetup,
+  };
+});
 
 const credentials = z.object({
   email: z.string().trim().email("Enter a valid email").max(160),
+
   password: z
     .string()
     .min(8, "Password must be at least 8 characters")
     .max(200),
 });
 
-export const login = createServerFn({ method: "POST" })
+export const login = createServerFn({
+  method: "POST",
+})
   .validator((input: unknown) => credentials.parse(input))
   .handler(async ({ data }) => {
     const { signIn } = await import("../auth/auth.server");
@@ -196,7 +206,9 @@ export const login = createServerFn({ method: "POST" })
     };
   });
 
-export const setupAdmin = createServerFn({ method: "POST" })
+export const setupAdmin = createServerFn({
+  method: "POST",
+})
   .validator((input: unknown) => credentials.parse(input))
   .handler(async ({ data }) => {
     const { createFirstAdmin } = await import("../auth/auth.server");
@@ -212,7 +224,9 @@ export const setupAdmin = createServerFn({ method: "POST" })
     };
   });
 
-export const logout = createServerFn({ method: "POST" }).handler(async () => {
+export const logout = createServerFn({
+  method: "POST",
+}).handler(async () => {
   const { signOut } = await import("../auth/auth.server");
 
   await signOut();
@@ -224,9 +238,24 @@ export const logout = createServerFn({ method: "POST" }).handler(async () => {
 
 /* ------------------------------- admin CRUD ------------------------------ */
 
-export const listRecords = createServerFn({ method: "POST" })
-  .validator((input: { key: string }) =>
-    z.object({ key: z.string().min(1).max(40) }).parse(input),
+export const listRecords = createServerFn({
+  method: "POST",
+})
+  .validator((input: unknown) =>
+    z
+      .object({
+        key: z.enum([
+          "projects",
+          "skills",
+          "education",
+          "experience",
+          "certifications",
+          "achievements",
+          "services",
+          "socialLinks",
+        ]),
+      })
+      .parse(input),
   )
   .handler(async ({ data }) => {
     const { adminList } = await import("./data.server");
@@ -238,11 +267,22 @@ export const listRecords = createServerFn({ method: "POST" })
     };
   });
 
-export const createRecord = createServerFn({ method: "POST" })
-  .validator((input: { key: string; values: unknown }) =>
+export const createRecord = createServerFn({
+  method: "POST",
+})
+  .validator((input: unknown) =>
     z
       .object({
-        key: z.string().min(1).max(40),
+        key: z.enum([
+          "projects",
+          "skills",
+          "education",
+          "experience",
+          "certifications",
+          "achievements",
+          "services",
+          "socialLinks",
+        ]),
         values: z.unknown(),
       })
       .parse(input),
@@ -255,11 +295,22 @@ export const createRecord = createServerFn({ method: "POST" })
     };
   });
 
-export const updateRecord = createServerFn({ method: "POST" })
-  .validator((input: { key: string; id: string; values: unknown }) =>
+export const updateRecord = createServerFn({
+  method: "POST",
+})
+  .validator((input: unknown) =>
     z
       .object({
-        key: z.string().min(1).max(40),
+        key: z.enum([
+          "projects",
+          "skills",
+          "education",
+          "experience",
+          "certifications",
+          "achievements",
+          "services",
+          "socialLinks",
+        ]),
         id: z.string().min(1).max(60),
         values: z.unknown(),
       })
@@ -275,11 +326,22 @@ export const updateRecord = createServerFn({ method: "POST" })
     };
   });
 
-export const deleteRecord = createServerFn({ method: "POST" })
-  .validator((input: { key: string; id: string }) =>
+export const deleteRecord = createServerFn({
+  method: "POST",
+})
+  .validator((input: unknown) =>
     z
       .object({
-        key: z.string().min(1).max(40),
+        key: z.enum([
+          "projects",
+          "skills",
+          "education",
+          "experience",
+          "certifications",
+          "achievements",
+          "services",
+          "socialLinks",
+        ]),
         id: z.string().min(1).max(60),
       })
       .parse(input),
@@ -294,7 +356,9 @@ export const deleteRecord = createServerFn({ method: "POST" })
     };
   });
 
-export const fetchSingleton = createServerFn({ method: "POST" })
+export const fetchSingleton = createServerFn({
+  method: "POST",
+})
   .validator((input: { key: "profile" | "siteSettings" }) =>
     z
       .object({
@@ -304,6 +368,7 @@ export const fetchSingleton = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     const { getSingleton } = await import("./data.server");
+
     const { requireAdmin } = await import("../auth/auth.server");
 
     await requireAdmin();
@@ -315,7 +380,9 @@ export const fetchSingleton = createServerFn({ method: "POST" })
     };
   });
 
-export const saveSingletonRecord = createServerFn({ method: "POST" })
+export const saveSingletonRecord = createServerFn({
+  method: "POST",
+})
   .validator((input: { key: "profile" | "siteSettings"; values: unknown }) =>
     z
       .object({
@@ -334,15 +401,17 @@ export const saveSingletonRecord = createServerFn({ method: "POST" })
     };
   });
 
-export const dashboardStats = createServerFn({ method: "GET" }).handler(
-  async () => {
-    const { getDashboardStats } = await import("./data.server");
+export const dashboardStats = createServerFn({
+  method: "GET",
+}).handler(async () => {
+  const { getDashboardStats } = await import("./data.server");
 
-    return await getDashboardStats();
-  },
-);
+  return await getDashboardStats();
+});
 
-export const runSeed = createServerFn({ method: "POST" }).handler(async () => {
+export const runSeed = createServerFn({
+  method: "POST",
+}).handler(async () => {
   const { requireAdmin } = await import("../auth/auth.server");
 
   await requireAdmin();
