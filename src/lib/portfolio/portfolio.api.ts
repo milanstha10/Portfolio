@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
-import { messageSchema } from "./schema";
+import { messageSchema } from "./portfolio.schema";
 
 type ClientValue =
   | string
@@ -87,8 +87,8 @@ const singletonKeySchema = z.enum(["profile", "siteSettings"]);
 export const fetchPortfolio = createServerFn({
   method: "GET",
 }).handler(async () => {
-  const { getPublicContent } = await import("./data.server");
-  const { isMongoConfigured } = await import("../mongo/mongo.server");
+  const { getPublicContent } = await import("./portfolio.data.server");
+  const { isMongoConfigured } = await import("../database/mongo.server");
 
   if (!isMongoConfigured()) {
     return {
@@ -128,7 +128,7 @@ export const fetchProject = createServerFn({
       .parse(input),
   )
   .handler(async ({ data }) => {
-    const { getProjectBySlug } = await import("./data.server");
+    const { getProjectBySlug } = await import("./portfolio.data.server");
     const { getCurrentAdmin } = await import("../auth/auth.server");
 
     const admin = await getCurrentAdmin();
@@ -144,7 +144,7 @@ export const submitMessage = createServerFn({
 })
   .validator((input: unknown) => messageSchema.parse(input))
   .handler(async ({ data }) => {
-    const { createMessage } = await import("./data.server");
+    const { createMessage } = await import("./portfolio.data.server");
 
     await createMessage(data);
 
@@ -165,7 +165,7 @@ export const authStatus = createServerFn({
   method: "GET",
 }).handler(async () => {
   const { getCurrentAdmin, adminCount } = await import("../auth/auth.server");
-  const { isMongoConfigured } = await import("../mongo/mongo.server");
+  const { isMongoConfigured } = await import("../database/mongo.server");
 
   if (!isMongoConfigured()) {
     return {
@@ -251,7 +251,7 @@ export const listRecords = createServerFn({
       .parse(input),
   )
   .handler(async ({ data }) => {
-    const { adminList } = await import("./data.server");
+    const { adminList } = await import("./portfolio.data.server");
 
     const records = await adminList(data.key);
 
@@ -272,7 +272,7 @@ export const createRecord = createServerFn({
       .parse(input),
   )
   .handler(async ({ data }) => {
-    const { adminCreate } = await import("./data.server");
+    const { adminCreate } = await import("./portfolio.data.server");
 
     return {
       id: await adminCreate(data.key, data.values),
@@ -292,7 +292,7 @@ export const updateRecord = createServerFn({
       .parse(input),
   )
   .handler(async ({ data }) => {
-    const { adminUpdate } = await import("./data.server");
+    const { adminUpdate } = await import("./portfolio.data.server");
 
     await adminUpdate(data.key, data.id, data.values);
 
@@ -313,7 +313,7 @@ export const deleteRecord = createServerFn({
       .parse(input),
   )
   .handler(async ({ data }) => {
-    const { adminDelete } = await import("./data.server");
+    const { adminDelete } = await import("./portfolio.data.server");
 
     await adminDelete(data.key, data.id);
 
@@ -333,7 +333,7 @@ export const fetchSingleton = createServerFn({
       .parse(input),
   )
   .handler(async ({ data }) => {
-    const { getSingleton } = await import("./data.server");
+    const { getSingleton } = await import("./portfolio.data.server");
     const { requireAdmin } = await import("../auth/auth.server");
 
     await requireAdmin();
@@ -357,7 +357,7 @@ export const saveSingletonRecord = createServerFn({
       .parse(input),
   )
   .handler(async ({ data }) => {
-    const { saveSingleton } = await import("./data.server");
+    const { saveSingleton } = await import("./portfolio.data.server");
 
     await saveSingleton(data.key, data.values);
 
@@ -369,7 +369,7 @@ export const saveSingletonRecord = createServerFn({
 export const dashboardStats = createServerFn({
   method: "GET",
 }).handler(async () => {
-  const { getDashboardStats } = await import("./data.server");
+  const { getDashboardStats } = await import("./portfolio.data.server");
 
   return await getDashboardStats();
 });
@@ -381,7 +381,7 @@ export const runSeed = createServerFn({
 
   await requireAdmin();
 
-  const { seedDemoData } = await import("./seed.server");
+  const { seedDemoData } = await import("./portfolio.seed.server");
 
   return {
     inserted: await seedDemoData(),

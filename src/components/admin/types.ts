@@ -16,7 +16,7 @@ import {
   User,
 } from "lucide-react";
 
-import { COLLECTIONS } from "@/lib/portfolio/schema";
+import { COLLECTIONS } from "@/lib/portfolio/portfolio.schema";
 
 export type SectionKey =
   "dashboard" | "profile" | "settings" | "messages" | keyof typeof COLLECTIONS;
@@ -27,15 +27,6 @@ export const isCollectionKey = (value: SectionKey): value is CollectionKey => {
   return value in COLLECTIONS;
 };
 
-/**
- * Lucide icons used by the admin navigation.
- *
- * Keeping this as a real component map avoids using:
- *
- *   "LayoutDashboard" as never
- *
- * which was only bypassing TypeScript.
- */
 export const ADMIN_ICONS: Record<string, LucideIcon> = {
   LayoutDashboard,
   User,

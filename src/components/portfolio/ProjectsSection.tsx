@@ -16,7 +16,7 @@ import {
   text,
   type PortfolioData,
   type Rec,
-} from "@/lib/portfolio/content";
+} from "@/lib/portfolio/portfolio.content";
 
 export function Projects({ data }: { data: PortfolioData }) {
   const categories = useMemo(() => {

@@ -5,15 +5,21 @@ import { Loader2, ShieldCheck } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
-import { authStatus, logout } from "@/lib/portfolio/api.functions";
+import { authStatus, logout } from "@/lib/portfolio/portfolio.api";
 
-import { PROFILE_FIELDS, SETTINGS_FIELDS } from "@/lib/portfolio/schema";
+import {
+  PROFILE_FIELDS,
+  SETTINGS_FIELDS,
+} from "@/lib/portfolio/portfolio.schema";
 
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { LoginScreen } from "@/components/admin/AdminAuth";
-import { Dashboard } from "@/components/admin/Dashboard";
-import { CollectionEditor, SingletonEditor } from "@/components/admin/Editors";
-import { Messages } from "@/components/admin/Messages";
+import { Dashboard } from "@/components/admin/AdminDashboard";
+import {
+  CollectionEditor,
+  SingletonEditor,
+} from "@/components/admin/AdminEditors";
+import { Messages } from "@/components/admin/AdminMessages";
 import { isCollectionKey, type SectionKey } from "@/components/admin/types";
 
 export const Route = createFileRoute("/admin")({
@@ -96,10 +102,6 @@ function AdminPage() {
   );
 }
 
-/* -------------------------------------------------------------------------- */
-/* Content                                                                    */
-/* -------------------------------------------------------------------------- */
-
 function AdminContent({ section }: { section: SectionKey }) {
   switch (section) {
     case "dashboard":
@@ -137,10 +139,6 @@ function AdminContent({ section }: { section: SectionKey }) {
   }
 }
 
-/* -------------------------------------------------------------------------- */
-/* Loading                                                                    */
-/* -------------------------------------------------------------------------- */
-
 function AdminLoading() {
   return (
     <main
@@ -151,10 +149,6 @@ function AdminLoading() {
     </main>
   );
 }
-
-/* -------------------------------------------------------------------------- */
-/* Server error                                                               */
-/* -------------------------------------------------------------------------- */
 
 function AdminError({ onRetry }: { onRetry: () => void }) {
   return (
@@ -181,10 +175,6 @@ function AdminError({ onRetry }: { onRetry: () => void }) {
   );
 }
 
-/* -------------------------------------------------------------------------- */
-/* MongoDB setup                                                              */
-/* -------------------------------------------------------------------------- */
-
 function MongoSetupMessage() {
   return (
     <main className="grid min-h-screen place-items-center px-4">
@@ -201,7 +191,7 @@ function MongoSetupMessage() {
 
         <div className="mt-5 rounded-lg border border-border bg-surface-light p-4 font-mono text-xs leading-6">
           <div>MONGODB_URI=...</div>
-          <div>MONGODB_DB=portfolio</div>
+          <div>MONGODB_DB=...</div>
           <div>SESSION_SECRET=...</div>
         </div>
       </div>

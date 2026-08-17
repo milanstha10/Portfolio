@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Loader2, RefreshCw } from "lucide-react";
 
-import { dashboardStats } from "@/lib/portfolio/api.functions";
+import { dashboardStats } from "@/lib/portfolio/portfolio.api";
 
 export function Dashboard() {
   const getStats = useServerFn(dashboardStats);

@@ -76,14 +76,6 @@ async function collection(name: string): Promise<Collection<Document>> {
   return db.collection<Document>(name);
 }
 
-/**
- * Convert MongoDB values into values that can safely cross the
- * TanStack Start server-function boundary.
- *
- * ObjectIds become strings.
- * Dates become ISO strings.
- * Nested arrays/objects are converted recursively.
- */
 function serializeValue(value: unknown): unknown {
   if (value instanceof ObjectId) {
     return value.toString();
@@ -114,9 +106,6 @@ function serializeDocument<T>(document: T): T {
   return serializeValue(document) as T;
 }
 
-/**
- * Works with both MongoDB ObjectId strings and string IDs.
- */
 export function byId(id: string): Doc {
   if (ObjectId.isValid(id) && String(new ObjectId(id)) === id) {
     return {

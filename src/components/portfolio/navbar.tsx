@@ -1,7 +1,11 @@
 import { FileText, Github, Linkedin, Menu, X } from "lucide-react";
 import { useEffect, useId, useMemo, useState } from "react";
 
-import { NAV_LINKS, text, type PortfolioData } from "@/lib/portfolio/content";
+import {
+  NAV_LINKS,
+  text,
+  type PortfolioData,
+} from "@/lib/portfolio/portfolio.content";
 
 export function Navbar({ data }: { data: PortfolioData }) {
   const [scrolled, setScrolled] = useState(false);

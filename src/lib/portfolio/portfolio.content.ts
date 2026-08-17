@@ -1,6 +1,4 @@
-/** Browser-safe helpers/types for portfolio content coming from MongoDB. */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type Rec = Record<string, any>;
+export type Rec = Record<string, unknown>;
 
 export interface PortfolioData {
   profile: Rec | null;

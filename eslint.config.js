@@ -47,9 +47,6 @@ export default tseslint.config(
     },
   },
 
-  // shadcn/ui components commonly export both a component
-  // and a CVA variant helper, so don't report Fast Refresh
-  // warnings for the generated UI directory.
   {
     files: ["src/components/ui/**/*.{ts,tsx}"],
     rules: {

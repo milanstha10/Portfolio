@@ -6,9 +6,13 @@ import { toast } from "sonner";
 import { Section } from "@/components/portfolio/section";
 import { Icon } from "@/components/ui/icon";
 import { Reveal } from "@/components/ui/reveal";
-import { idOf, text, type PortfolioData } from "@/lib/portfolio/content";
-import { submitMessage } from "@/lib/portfolio/api.functions";
-import { messageSchema } from "@/lib/portfolio/schema";
+import {
+  idOf,
+  text,
+  type PortfolioData,
+} from "@/lib/portfolio/portfolio.content";
+import { submitMessage } from "@/lib/portfolio/portfolio.api";
+import { messageSchema } from "@/lib/portfolio/portfolio.schema";
 
 export function Contact({ data }: { data: PortfolioData }) {
   const send = useServerFn(submitMessage);

@@ -5,7 +5,7 @@ import { ArrowLeft, Loader2, ShieldCheck } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
 
-import { authStatus, login, setupAdmin } from "@/lib/portfolio/api.functions";
+import { authStatus, login, setupAdmin } from "@/lib/portfolio/portfolio.api";
 
 export function LoginScreen({ needsSetup }: { needsSetup: boolean }) {
   const queryClient = useQueryClient();

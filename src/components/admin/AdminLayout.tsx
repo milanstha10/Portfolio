@@ -29,7 +29,6 @@ export function AdminLayout({
   return (
     <main className="min-h-screen bg-background">
       <div className="flex min-h-screen">
-        {/* Desktop sidebar */}
         <aside className="hidden w-64 shrink-0 border-r border-border bg-surface-light/30 lg:block">
           <div className="sticky top-0 flex h-screen flex-col">
             <div className="border-b border-border p-5">
@@ -75,9 +74,7 @@ export function AdminLayout({
           </div>
         </aside>
 
-        {/* Main content */}
         <div className="min-w-0 flex-1">
-          {/* Mobile header */}
           <header className="sticky top-0 z-30 flex items-center justify-between border-b border-border bg-background/95 px-4 py-3 backdrop-blur lg:hidden">
             <button
               type="button"

@@ -1,10 +1,11 @@
-/**
- * Data services (server-only): the layer between the API (server functions)
- * and MongoDB. Controllers/services in a classic Express app map 1:1 to this.
- */
 import { requireAdmin } from "../auth/auth.server";
-import { byId, db, type Doc } from "../mongo/mongo.server";
-import { COLLECTIONS, SINGLETONS, messageSchema, slugify } from "./schema";
+import { byId, db, type Doc } from "../database/mongo.server";
+import {
+  COLLECTIONS,
+  SINGLETONS,
+  messageSchema,
+  slugify,
+} from "./portfolio.schema";
 
 export interface PortfolioContent {
   profile: Doc | null;
@@ -22,7 +23,6 @@ export interface PortfolioContent {
 type CollectionKey = keyof typeof COLLECTIONS;
 type AdminKey = CollectionKey | "messages";
 
-/** Public read: only published projects, and never any private collection. */
 export async function getPublicContent(): Promise<PortfolioContent> {
   const [
     profile,
@@ -75,7 +75,6 @@ export async function getProjectBySlug(
   return db.findOne("projects", filter);
 }
 
-/** Public write: contact messages, with a light abuse guard. */
 export async function createMessage(input: unknown): Promise<void> {
   const data = messageSchema.parse(input);
 
@@ -97,7 +96,7 @@ export async function createMessage(input: unknown): Promise<void> {
     createdAt: { $gt: since },
   });
 
-  if (duplicate) return; // ignore accidental double submit
+  if (duplicate) return;
 
   await db.insertOne("messages", {
     name: data.name,
@@ -108,17 +107,9 @@ export async function createMessage(input: unknown): Promise<void> {
   });
 }
 
-/**
- * Return configuration for a valid COLLECTIONS key.
- *
- * "messages" is intentionally not included because messages
- * are handled separately in the admin functions.
- */
 function configFor(key: CollectionKey) {
   return COLLECTIONS[key];
 }
-
-/* -------------------------- admin (protected) -------------------------- */
 
 export async function adminList(key: AdminKey): Promise<Doc[]> {
   await requireAdmin();

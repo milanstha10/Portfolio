@@ -1,10 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { About } from "@/components/portfolio/about";
-import { Contact } from "@/components/portfolio/contact";
-import { Hero } from "@/components/portfolio/hero";
-import { Navbar } from "@/components/portfolio/navbar";
-import { Projects } from "@/components/portfolio/projects";
+import { About } from "@/components/portfolio/AboutSection";
+import { Contact } from "@/components/portfolio/ContactSection";
+import { Hero } from "@/components/portfolio/HeroSection";
+import { Navbar } from "@/components/portfolio/Navbar";
+import { Projects } from "@/components/portfolio/ProjectsSection";
 import {
   AchievementsSection,
   CertificationsSection,
@@ -12,15 +12,15 @@ import {
   ExperienceSection,
   ResumeSection,
   ServicesSection,
-} from "@/components/portfolio/sections";
-import { Skills } from "@/components/portfolio/skills";
-import { fetchPortfolio } from "@/lib/portfolio/api.functions";
+} from "@/components/portfolio/EducationSection";
+import { Skills } from "@/components/portfolio/SkillsSection";
+import { fetchPortfolio } from "@/lib/portfolio/portfolio.api";
 import {
   EMPTY_PORTFOLIO,
   idOf,
   text,
   type PortfolioData,
-} from "@/lib/portfolio/content";
+} from "@/lib/portfolio/portfolio.content";
 
 export const Route = createFileRoute("/")({
   loader: async (): Promise<PortfolioData> => {

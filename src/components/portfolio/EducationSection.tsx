@@ -16,7 +16,7 @@ import {
   text,
   type PortfolioData,
   type Rec,
-} from "@/lib/portfolio/content";
+} from "@/lib/portfolio/portfolio.content";
 
 function TimelineItem({ record, isLast }: { record: Rec; isLast: boolean }) {
   const title =

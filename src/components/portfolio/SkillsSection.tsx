@@ -3,8 +3,12 @@ import { ArrowUpRight } from "lucide-react";
 import { EmptyState, Section } from "@/components/portfolio/section";
 import { Icon } from "@/components/ui/icon";
 import { Reveal } from "@/components/ui/reveal";
-import { text, type PortfolioData, type Rec } from "@/lib/portfolio/content";
-import { SKILL_CATEGORIES } from "@/lib/portfolio/schema";
+import {
+  text,
+  type PortfolioData,
+  type Rec,
+} from "@/lib/portfolio/portfolio.content";
+import { SKILL_CATEGORIES } from "@/lib/portfolio/portfolio.schema";
 
 const CATEGORY_ICONS: Record<string, string> = {
   Frontend: "MonitorSmartphone",

@@ -8,11 +8,11 @@ import {
   deleteRecord,
   listRecords,
   updateRecord,
-} from "@/lib/portfolio/api.functions";
+} from "@/lib/portfolio/portfolio.api";
 
-import { idOf, text, type Rec } from "@/lib/portfolio/content";
+import { idOf, text, type Rec } from "@/lib/portfolio/portfolio.content";
 
-import { PageHeader } from "./Dashboard";
+import { PageHeader } from "./AdminDashboard";
 
 export function Messages() {
   const getRecords = useServerFn(listRecords);

@@ -12,7 +12,7 @@ import {
   listRecords,
   saveSingletonRecord,
   updateRecord,
-} from "@/lib/portfolio/api.functions";
+} from "@/lib/portfolio/portfolio.api";
 
 import {
   COLLECTIONS,
@@ -20,16 +20,12 @@ import {
   SETTINGS_FIELDS,
   SINGLETONS,
   type FieldDef,
-} from "@/lib/portfolio/schema";
+} from "@/lib/portfolio/portfolio.schema";
 
-import { idOf, text, type Rec } from "@/lib/portfolio/content";
+import { idOf, text, type Rec } from "@/lib/portfolio/portfolio.content";
 
 import type { CollectionKey } from "./types";
-import { PageHeader } from "./Dashboard";
-
-/* -------------------------------------------------------------------------- */
-/* Helpers                                                                    */
-/* -------------------------------------------------------------------------- */
+import { PageHeader } from "./AdminDashboard";
 
 function getValidationMessage(error: unknown): string {
   if (error && typeof error === "object" && "issues" in error) {
@@ -46,10 +42,6 @@ function getValidationMessage(error: unknown): string {
     ? error.message
     : "Please check the form fields.";
 }
-
-/* -------------------------------------------------------------------------- */
-/* Singleton editor                                                           */
-/* -------------------------------------------------------------------------- */
 
 export function SingletonEditor({
   title,
@@ -134,10 +126,6 @@ export function SingletonEditor({
     </section>
   );
 }
-
-/* -------------------------------------------------------------------------- */
-/* Collection editor                                                          */
-/* -------------------------------------------------------------------------- */
 
 export function CollectionEditor({
   collectionKey,
@@ -378,10 +366,6 @@ export function CollectionEditor({
   );
 }
 
-/* -------------------------------------------------------------------------- */
-/* Record form                                                                */
-/* -------------------------------------------------------------------------- */
-
 export function RecordForm({
   title,
   fields,
@@ -549,10 +533,6 @@ export function RecordForm({
   );
 }
 
-/* -------------------------------------------------------------------------- */
-/* Field input                                                                */
-/* -------------------------------------------------------------------------- */
-
 function FieldInput({
   field,
   value,
@@ -707,10 +687,6 @@ function FieldInput({
   );
 }
 
-/* -------------------------------------------------------------------------- */
-/* Table cell                                                                 */
-/* -------------------------------------------------------------------------- */
-
 function CellValue({ value, field }: { value: unknown; field: FieldDef }) {
   if (field.type === "switch") {
     return value ? (
@@ -752,10 +728,6 @@ function CellValue({ value, field }: { value: unknown; field: FieldDef }) {
     </span>
   );
 }
-
-/* -------------------------------------------------------------------------- */
-/* Shared states                                                              */
-/* -------------------------------------------------------------------------- */
 
 function LoadingMessage({ message }: { message: string }) {
   return (

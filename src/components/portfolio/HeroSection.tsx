@@ -10,7 +10,11 @@ import {
 } from "lucide-react";
 import { useMemo } from "react";
 
-import { list, text, type PortfolioData } from "@/lib/portfolio/content";
+import {
+  list,
+  text,
+  type PortfolioData,
+} from "@/lib/portfolio/portfolio.content";
 
 export function Hero({ data }: { data: PortfolioData }) {
   const profile = data.profile ?? {};

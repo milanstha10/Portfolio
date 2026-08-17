@@ -1,12 +1,5 @@
-/**
- * Demo / placeholder seed data (server-only).
- *
- * Everything here is CLEARLY marked as demo content so it is obvious that the
- * projects, certificates and achievements are samples, not real records.
- * Run it once from the admin dashboard, then edit or delete the records.
- */
-import { db } from "../mongo/mongo.server";
-import { slugify } from "./schema";
+import { db } from "../database/mongo.server";
+import { slugify } from "./portfolio.schema";
 
 const DEMO = "[DEMO]";
 

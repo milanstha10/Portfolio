@@ -1,8 +1,8 @@
 import { Link, createFileRoute, notFound } from "@tanstack/react-router";
 import { ArrowLeft, ExternalLink, Github } from "lucide-react";
 
-import { fetchProject } from "@/lib/portfolio/api.functions";
-import { list, text, type Rec } from "@/lib/portfolio/content";
+import { fetchProject } from "@/lib/portfolio/portfolio.api";
+import { list, text, type Rec } from "@/lib/portfolio/portfolio.content";
 
 export const Route = createFileRoute("/projects/$slug")({
   loader: async ({ params }) => {

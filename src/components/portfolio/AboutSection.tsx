@@ -2,7 +2,11 @@ import { ArrowUpRight, Compass, GraduationCap, Target } from "lucide-react";
 
 import { Section } from "@/components/portfolio/section";
 import { Reveal } from "@/components/ui/reveal";
-import { list, text, type PortfolioData } from "@/lib/portfolio/content";
+import {
+  list,
+  text,
+  type PortfolioData,
+} from "@/lib/portfolio/portfolio.content";
 
 export function About({ data }: { data: PortfolioData }) {
   const profile = data.profile ?? {};
