@@ -3,10 +3,6 @@ import { z } from "zod";
 
 import { messageSchema } from "./schema";
 
-/**
- * Values that are safe to send from a TanStack Start server function
- * to the client.
- */
 type ClientValue =
   | string
   | number
@@ -15,10 +11,6 @@ type ClientValue =
   | ClientValue[]
   | { [key: string]: ClientValue };
 
-/**
- * Convert arbitrary server-side data into a value that is safe to
- * serialize across the server-function boundary.
- */
 function toClientValue(value: unknown): ClientValue {
   if (value === null) {
     return null;
@@ -45,9 +37,7 @@ function toClientValue(value: unknown): ClientValue {
   }
 
   if (typeof value === "object") {
-    const result: {
-      [key: string]: ClientValue;
-    } = {};
+    const result: Record<string, ClientValue> = {};
 
     for (const [key, nestedValue] of Object.entries(value)) {
       result[key] = toClientValue(nestedValue);
@@ -59,9 +49,7 @@ function toClientValue(value: unknown): ClientValue {
   return null;
 }
 
-function toClientDocument(value: unknown): {
-  [key: string]: ClientValue;
-} {
+function toClientDocument(value: unknown): Record<string, ClientValue> {
   const result = toClientValue(value);
 
   if (result !== null && typeof result === "object" && !Array.isArray(result)) {
@@ -71,18 +59,40 @@ function toClientDocument(value: unknown): {
   return {};
 }
 
-/* ----------------------------- public API -------------------------------- */
+const adminRecordKeySchema = z.enum([
+  "projects",
+  "skills",
+  "education",
+  "experience",
+  "certifications",
+  "achievements",
+  "services",
+  "socialLinks",
+  "messages",
+]);
+
+const collectionKeySchema = z.enum([
+  "projects",
+  "skills",
+  "education",
+  "experience",
+  "certifications",
+  "achievements",
+  "services",
+  "socialLinks",
+]);
+
+const singletonKeySchema = z.enum(["profile", "siteSettings"]);
 
 export const fetchPortfolio = createServerFn({
   method: "GET",
 }).handler(async () => {
   const { getPublicContent } = await import("./data.server");
-
   const { isMongoConfigured } = await import("../mongo/mongo.server");
 
   if (!isMongoConfigured()) {
     return {
-      configured: false as const,
+      configured: false,
       content: null,
       error: null,
     };
@@ -92,7 +102,7 @@ export const fetchPortfolio = createServerFn({
     const content = await getPublicContent();
 
     return {
-      configured: true as const,
+      configured: true,
       content: toClientDocument(content),
       error: null,
     };
@@ -100,7 +110,7 @@ export const fetchPortfolio = createServerFn({
     console.error("[api] fetchPortfolio", error);
 
     return {
-      configured: true as const,
+      configured: true,
       content: null,
       error: "Could not reach the database.",
     };
@@ -110,20 +120,18 @@ export const fetchPortfolio = createServerFn({
 export const fetchProject = createServerFn({
   method: "GET",
 })
-  .validator((input: { slug: string }) =>
+  .validator((input: unknown) =>
     z
       .object({
-        slug: z.string().min(1).max(120),
+        slug: z.string().trim().min(1).max(120),
       })
       .parse(input),
   )
   .handler(async ({ data }) => {
     const { getProjectBySlug } = await import("./data.server");
-
     const { getCurrentAdmin } = await import("../auth/auth.server");
 
     const admin = await getCurrentAdmin();
-
     const project = await getProjectBySlug(data.slug, Boolean(admin));
 
     return {
@@ -145,13 +153,18 @@ export const submitMessage = createServerFn({
     };
   });
 
-/* -------------------------------- auth -------------------------------- */
+const credentials = z.object({
+  email: z.string().trim().email("Enter a valid email").max(160),
+  password: z
+    .string()
+    .min(8, "Password must be at least 8 characters")
+    .max(200),
+});
 
 export const authStatus = createServerFn({
   method: "GET",
 }).handler(async () => {
   const { getCurrentAdmin, adminCount } = await import("../auth/auth.server");
-
   const { isMongoConfigured } = await import("../mongo/mongo.server");
 
   if (!isMongoConfigured()) {
@@ -177,15 +190,6 @@ export const authStatus = createServerFn({
     admin,
     needsSetup,
   };
-});
-
-const credentials = z.object({
-  email: z.string().trim().email("Enter a valid email").max(160),
-
-  password: z
-    .string()
-    .min(8, "Password must be at least 8 characters")
-    .max(200),
 });
 
 export const login = createServerFn({
@@ -236,24 +240,13 @@ export const logout = createServerFn({
   };
 });
 
-/* ------------------------------- admin CRUD ------------------------------ */
-
 export const listRecords = createServerFn({
   method: "POST",
 })
   .validator((input: unknown) =>
     z
       .object({
-        key: z.enum([
-          "projects",
-          "skills",
-          "education",
-          "experience",
-          "certifications",
-          "achievements",
-          "services",
-          "socialLinks",
-        ]),
+        key: adminRecordKeySchema,
       })
       .parse(input),
   )
@@ -273,16 +266,7 @@ export const createRecord = createServerFn({
   .validator((input: unknown) =>
     z
       .object({
-        key: z.enum([
-          "projects",
-          "skills",
-          "education",
-          "experience",
-          "certifications",
-          "achievements",
-          "services",
-          "socialLinks",
-        ]),
+        key: collectionKeySchema,
         values: z.unknown(),
       })
       .parse(input),
@@ -301,16 +285,7 @@ export const updateRecord = createServerFn({
   .validator((input: unknown) =>
     z
       .object({
-        key: z.enum([
-          "projects",
-          "skills",
-          "education",
-          "experience",
-          "certifications",
-          "achievements",
-          "services",
-          "socialLinks",
-        ]),
+        key: adminRecordKeySchema,
         id: z.string().min(1).max(60),
         values: z.unknown(),
       })
@@ -332,16 +307,7 @@ export const deleteRecord = createServerFn({
   .validator((input: unknown) =>
     z
       .object({
-        key: z.enum([
-          "projects",
-          "skills",
-          "education",
-          "experience",
-          "certifications",
-          "achievements",
-          "services",
-          "socialLinks",
-        ]),
+        key: adminRecordKeySchema,
         id: z.string().min(1).max(60),
       })
       .parse(input),
@@ -359,16 +325,15 @@ export const deleteRecord = createServerFn({
 export const fetchSingleton = createServerFn({
   method: "POST",
 })
-  .validator((input: { key: "profile" | "siteSettings" }) =>
+  .validator((input: unknown) =>
     z
       .object({
-        key: z.enum(["profile", "siteSettings"]),
+        key: singletonKeySchema,
       })
       .parse(input),
   )
   .handler(async ({ data }) => {
     const { getSingleton } = await import("./data.server");
-
     const { requireAdmin } = await import("../auth/auth.server");
 
     await requireAdmin();
@@ -383,10 +348,10 @@ export const fetchSingleton = createServerFn({
 export const saveSingletonRecord = createServerFn({
   method: "POST",
 })
-  .validator((input: { key: "profile" | "siteSettings"; values: unknown }) =>
+  .validator((input: unknown) =>
     z
       .object({
-        key: z.enum(["profile", "siteSettings"]),
+        key: singletonKeySchema,
         values: z.unknown(),
       })
       .parse(input),

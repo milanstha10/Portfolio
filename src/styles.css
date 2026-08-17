@@ -2,26 +2,11 @@
 @source "../src";
 @import "tw-animate-css";
 
-/*
- * Premium developer portfolio design system.
- * Dark-only theme.
- *
- * Visual direction:
- * - Deep navy background
- * - Indigo primary
- * - Cyan accent
- * - Thin borders
- * - Subtle glass surfaces
- * - Clean developer-focused typography
- */
-
 @theme inline {
-  /* Typography */
   --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 
-  /* Radius */
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -29,7 +14,6 @@
   --radius-2xl: calc(var(--radius) + 8px);
   --radius-3xl: calc(var(--radius) + 12px);
 
-  /* Colors */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
 
@@ -64,14 +48,12 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
 
-  /* Charts */
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
 
-  /* Sidebar */
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -81,7 +63,6 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  /* Shadows */
   --shadow-soft:
     0 1px 2px oklch(0 0 0 / 0.2),
     0 12px 32px -12px oklch(0 0 0 / 0.45);
@@ -90,7 +71,6 @@
     0 0 0 1px var(--border),
     0 24px 60px -30px var(--primary);
 
-  /* Animations */
   --animate-fade-up:
     fade-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
 
@@ -98,67 +78,50 @@
     float 9s ease-in-out infinite;
 }
 
-/* =========================================================
-   DARK-ONLY THEME
-   ========================================================= */
-
 :root {
   --radius: 0.75rem;
 
-  /* Main */
   --background: oklch(0.148 0.032 265);
   --foreground: oklch(0.984 0.003 248);
 
-  /* Surfaces */
   --surface: oklch(0.21 0.032 265);
   --surface-light: oklch(0.255 0.033 265);
 
-  /* Cards */
   --card: oklch(0.21 0.032 265);
   --card-foreground: oklch(0.984 0.003 248);
 
-  /* Popovers */
   --popover: oklch(0.21 0.032 265);
   --popover-foreground: oklch(0.984 0.003 248);
 
-  /* Primary */
   --primary: oklch(0.585 0.233 277);
   --primary-foreground: oklch(0.99 0.003 248);
 
-  /* Secondary */
   --secondary: oklch(0.623 0.214 259);
   --secondary-foreground: oklch(0.99 0.003 248);
 
-  /* Muted */
   --muted: oklch(0.255 0.033 265);
   --muted-foreground: oklch(0.704 0.04 257);
 
-  /* Accent */
   --accent: oklch(0.789 0.154 211);
   --accent-foreground: oklch(0.17 0.03 265);
 
-  /* Status */
   --destructive: oklch(0.637 0.237 25);
   --destructive-foreground: oklch(0.99 0.003 248);
 
   --success: oklch(0.723 0.19 149);
   --success-foreground: oklch(0.17 0.03 265);
 
-  /* Borders */
   --border: oklch(0.31 0.03 258);
   --input: oklch(0.31 0.03 258);
 
-  /* Focus */
   --ring: oklch(0.585 0.233 277);
 
-  /* Charts */
   --chart-1: oklch(0.585 0.233 277);
   --chart-2: oklch(0.623 0.214 259);
   --chart-3: oklch(0.789 0.154 211);
   --chart-4: oklch(0.723 0.19 149);
   --chart-5: oklch(0.704 0.04 257);
 
-  /* Sidebar */
   --sidebar: oklch(0.185 0.032 265);
   --sidebar-foreground: oklch(0.95 0.006 248);
 
@@ -173,10 +136,6 @@
 
   color-scheme: dark;
 }
-
-/* =========================================================
-   BASE
-   ========================================================= */
 
 @layer base {
 
@@ -195,14 +154,15 @@
 
   body {
     min-width: 320px;
+    min-height: 100vh;
     margin: 0;
     overflow-x: hidden;
-
     background-color: var(--color-background);
     color: var(--color-foreground);
-
     font-family: var(--font-sans);
-
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
     transition:
       background-color 0.25s ease,
       color 0.25s ease;
@@ -230,9 +190,14 @@
     cursor: pointer;
   }
 
-  img {
+  img,
+  svg {
     display: block;
     max-width: 100%;
+  }
+
+  img {
+    height: auto;
   }
 
   :focus-visible {
@@ -245,7 +210,6 @@
     color: var(--color-primary-foreground);
   }
 
-  /* Custom scrollbar */
   * {
     scrollbar-width: thin;
     scrollbar-color: var(--color-border) transparent;
@@ -270,20 +234,24 @@
   }
 }
 
-/* =========================================================
-   CONTAINER
-   ========================================================= */
-
 @utility container-page {
   width: 100%;
   margin-inline: auto;
   max-width: 78rem;
-  padding-inline: 1.25rem;
-}
+  padding-inline: 1rem;
 
-/* =========================================================
-   SURFACE CARD
-   ========================================================= */
+  @media (min-width: 640px) {
+    padding-inline: 1.5rem;
+  }
+
+  @media (min-width: 1024px) {
+    padding-inline: 2rem;
+  }
+
+  @media (min-width: 1280px) {
+    padding-inline: 2.5rem;
+  }
+}
 
 @utility surface-card {
   background-color: var(--color-card);
@@ -292,24 +260,14 @@
   box-shadow: var(--shadow-soft);
 }
 
-/* =========================================================
-   GLASS PANEL
-   ========================================================= */
-
 @utility glass-panel {
   background-color: color-mix(in oklab,
       var(--color-surface) 72%,
       transparent);
-
   border: 1px solid var(--color-border);
-
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
 }
-
-/* =========================================================
-   GRADIENT TEXT
-   ========================================================= */
 
 @utility text-gradient {
   background: linear-gradient(100deg,
@@ -317,16 +275,10 @@
       var(--color-foreground) 35%,
       var(--color-primary) 70%,
       var(--color-accent) 100%);
-
   background-clip: text;
   -webkit-background-clip: text;
-
   color: transparent;
 }
-
-/* =========================================================
-   SECTION EYEBROW
-   ========================================================= */
 
 @utility section-eyebrow {
   font-family: var(--font-mono);
@@ -336,37 +288,22 @@
   color: var(--color-accent);
 }
 
-/* =========================================================
-   GRID BACKDROP
-   ========================================================= */
-
 @utility grid-backdrop {
   background-image:
     linear-gradient(to right,
-      color-mix(in oklab,
-        var(--color-border) 55%,
-        transparent) 1px,
+      color-mix(in oklab, var(--color-border) 55%, transparent) 1px,
       transparent 1px),
     linear-gradient(to bottom,
-      color-mix(in oklab,
-        var(--color-border) 55%,
-        transparent) 1px,
+      color-mix(in oklab, var(--color-border) 55%, transparent) 1px,
       transparent 1px);
-
   background-size: 64px 64px;
-
   mask-image: radial-gradient(ellipse 70% 60% at 50% 0%,
       black 20%,
       transparent 75%);
-
   -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 0%,
       black 20%,
       transparent 75%);
 }
-
-/* =========================================================
-   ANIMATIONS
-   ========================================================= */
 
 @keyframes fade-up {
   from {
@@ -392,14 +329,9 @@
   }
 }
 
-/* =========================================================
-   SCROLL REVEAL
-   ========================================================= */
-
 .reveal {
   opacity: 0;
   transform: translateY(18px);
-
   transition:
     opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
     transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
@@ -409,10 +341,6 @@
   opacity: 1;
   transform: none;
 }
-
-/* =========================================================
-   REDUCED MOTION
-   ========================================================= */
 
 @media (prefers-reduced-motion: reduce) {
   html {

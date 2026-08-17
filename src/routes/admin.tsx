@@ -27,22 +27,6 @@ export const Route = createFileRoute("/admin")({
         content: "Secure admin area for managing portfolio content.",
       },
       {
-        property: "og:title",
-        content: "Admin — Portfolio content manager",
-      },
-      {
-        property: "og:description",
-        content: "Secure admin area for managing portfolio content.",
-      },
-      {
-        property: "og:type",
-        content: "website",
-      },
-      {
-        name: "twitter:card",
-        content: "summary_large_image",
-      },
-      {
         name: "robots",
         content: "noindex, nofollow",
       },
@@ -74,8 +58,13 @@ function AdminPage() {
       await refetch();
 
       toast.success("Signed out");
-    } catch {
-      toast.error("Could not sign out");
+    } catch (error) {
+      console.error("[admin] logout error", error);
+
+      toast.error("Could not sign out", {
+        description:
+          error instanceof Error ? error.message : "Please try again.",
+      });
     }
   }
 
@@ -112,41 +101,40 @@ function AdminPage() {
 /* -------------------------------------------------------------------------- */
 
 function AdminContent({ section }: { section: SectionKey }) {
-  if (section === "dashboard") {
-    return <Dashboard />;
-  }
+  switch (section) {
+    case "dashboard":
+      return <Dashboard />;
 
-  if (section === "profile") {
-    return (
-      <SingletonEditor
-        title="Profile"
-        description="Manage your personal information, bio, contact details and profile links."
-        apiKey="profile"
-        fields={PROFILE_FIELDS}
-      />
-    );
-  }
+    case "profile":
+      return (
+        <SingletonEditor
+          title="Profile"
+          description="Manage your personal information, bio, contact details and profile links."
+          apiKey="profile"
+          fields={PROFILE_FIELDS}
+        />
+      );
 
-  if (section === "settings") {
-    return (
-      <SingletonEditor
-        title="Site settings"
-        description="Manage your website title, hero content, SEO and resume."
-        apiKey="siteSettings"
-        fields={SETTINGS_FIELDS}
-      />
-    );
-  }
+    case "settings":
+      return (
+        <SingletonEditor
+          title="Site settings"
+          description="Manage your website title, hero content, SEO and resume."
+          apiKey="siteSettings"
+          fields={SETTINGS_FIELDS}
+        />
+      );
 
-  if (section === "messages") {
-    return <Messages />;
-  }
+    case "messages":
+      return <Messages />;
 
-  if (isCollectionKey(section)) {
-    return <CollectionEditor collectionKey={section} />;
-  }
+    default:
+      if (isCollectionKey(section)) {
+        return <CollectionEditor collectionKey={section} />;
+      }
 
-  return null;
+      return null;
+  }
 }
 
 /* -------------------------------------------------------------------------- */
@@ -155,7 +143,10 @@ function AdminContent({ section }: { section: SectionKey }) {
 
 function AdminLoading() {
   return (
-    <main className="grid min-h-screen place-items-center">
+    <main
+      className="grid min-h-screen place-items-center"
+      aria-label="Loading admin panel"
+    >
       <Loader2 className="size-6 animate-spin text-muted-foreground" />
     </main>
   );

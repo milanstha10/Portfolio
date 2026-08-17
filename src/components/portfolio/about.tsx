@@ -1,4 +1,4 @@
-import { Compass, GraduationCap, Target, ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, Compass, GraduationCap, Target } from "lucide-react";
 
 import { Section } from "@/components/portfolio/section";
 import { Reveal } from "@/components/ui/reveal";
@@ -6,8 +6,11 @@ import { list, text, type PortfolioData } from "@/lib/portfolio/content";
 
 export function About({ data }: { data: PortfolioData }) {
   const profile = data.profile ?? {};
-  const learning = list(profile["learning"]);
-  const paragraphs = text(profile["longBio"]).split("\n\n").filter(Boolean);
+  const learning = list(profile["learning"]).filter(Boolean);
+  const paragraphs = text(profile["longBio"])
+    .split(/\n\s*\n/)
+    .map((paragraph) => paragraph.trim())
+    .filter(Boolean);
 
   const stats = [
     {
@@ -42,7 +45,7 @@ export function About({ data }: { data: PortfolioData }) {
         <Reveal className="surface-card relative overflow-hidden p-6 sm:p-8 lg:p-10">
           <div
             className="pointer-events-none absolute -right-24 -top-24 size-64 rounded-full bg-primary/5 blur-3xl"
-            aria-hidden
+            aria-hidden="true"
           />
 
           <div className="relative">
@@ -57,15 +60,18 @@ export function About({ data }: { data: PortfolioData }) {
                 </h3>
               </div>
 
-              <span className="grid size-10 shrink-0 place-items-center rounded-xl border border-border/70 bg-surface-light/60">
-                <Compass className="size-4 text-primary" aria-hidden />
+              <span
+                className="grid size-10 shrink-0 place-items-center rounded-xl border border-border/70 bg-surface-light/60"
+                aria-hidden="true"
+              >
+                <Compass className="size-4 text-primary" />
               </span>
             </div>
 
-            {paragraphs.length ? (
+            {paragraphs.length > 0 ? (
               <div className="mt-7 space-y-5 text-sm leading-7 text-muted-foreground sm:text-base">
                 {paragraphs.map((paragraph, index) => (
-                  <p key={index}>{paragraph}</p>
+                  <p key={`${paragraph.slice(0, 24)}-${index}`}>{paragraph}</p>
                 ))}
               </div>
             ) : (
@@ -75,10 +81,13 @@ export function About({ data }: { data: PortfolioData }) {
               </p>
             )}
 
-            <div className="mt-8 grid gap-3 sm:grid-cols-3">
+            <dl className="mt-8 grid gap-3 sm:grid-cols-3">
               <Fact
                 icon={
-                  <GraduationCap className="size-4 text-primary" aria-hidden />
+                  <GraduationCap
+                    className="size-4 text-primary"
+                    aria-hidden="true"
+                  />
                 }
                 label="Academic status"
               >
@@ -86,7 +95,12 @@ export function About({ data }: { data: PortfolioData }) {
               </Fact>
 
               <Fact
-                icon={<Compass className="size-4 text-secondary" aria-hidden />}
+                icon={
+                  <Compass
+                    className="size-4 text-secondary"
+                    aria-hidden="true"
+                  />
+                }
                 label="Availability"
               >
                 {text(
@@ -96,12 +110,14 @@ export function About({ data }: { data: PortfolioData }) {
               </Fact>
 
               <Fact
-                icon={<Target className="size-4 text-accent" aria-hidden />}
+                icon={
+                  <Target className="size-4 text-accent" aria-hidden="true" />
+                }
                 label="Based in"
               >
                 {text(profile["location"], "—")}
               </Fact>
-            </div>
+            </dl>
           </div>
         </Reveal>
 
@@ -121,20 +137,26 @@ export function About({ data }: { data: PortfolioData }) {
                 </h3>
               </div>
 
-              <span className="grid size-9 place-items-center rounded-lg border border-border/70 bg-surface-light/50">
+              <span
+                className="grid size-9 place-items-center rounded-lg border border-border/70 bg-surface-light/50"
+                aria-hidden="true"
+              >
                 <ArrowUpRight
                   className="size-4 text-muted-foreground"
-                  aria-hidden
+                  aria-hidden="true"
                 />
               </span>
             </div>
 
-            {learning.length ? (
-              <ul className="mt-6 flex flex-wrap gap-2">
+            {learning.length > 0 ? (
+              <ul
+                className="mt-6 flex flex-wrap gap-2"
+                aria-label="Technologies currently learning"
+              >
                 {learning.map((item) => (
                   <li
                     key={item}
-                    className="rounded-lg border border-border/70 bg-surface-light/50 px-3 py-2 font-mono text-[11px] text-muted-foreground transition-all duration-200 hover:-translate-y-0.5 hover:border-border hover:bg-surface-light hover:text-foreground"
+                    className="rounded-lg border border-border/70 bg-surface-light/50 px-3 py-2 font-mono text-[11px] text-muted-foreground transition-all duration-200 hover:-translate-y-0.5 hover:border-border hover:bg-surface-light hover:text-foreground motion-reduce:transition-none motion-reduce:hover:translate-y-0"
                   >
                     {item}
                   </li>
@@ -147,28 +169,22 @@ export function About({ data }: { data: PortfolioData }) {
             )}
           </Reveal>
 
-          {stats.length ? (
+          {stats.length > 0 ? (
             <Reveal
               className="surface-card overflow-hidden p-6 sm:p-7"
               delay={140}
             >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-accent">
-                    At a glance
-                  </p>
+              <div>
+                <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-accent">
+                  At a glance
+                </p>
 
-                  <h3 className="mt-2 font-display text-base font-semibold">
-                    A few numbers
-                  </h3>
-                </div>
+                <h3 className="mt-2 font-display text-base font-semibold">
+                  A few numbers
+                </h3>
               </div>
 
-              <div
-                className={`mt-7 grid gap-px overflow-hidden rounded-xl border border-border/70 bg-border/70 ${
-                  stats.length >= 4 ? "grid-cols-2" : "grid-cols-2"
-                }`}
-              >
+              <div className="mt-7 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-border/70 bg-border/70">
                 {stats.map((stat) => (
                   <div
                     key={stat.label}
@@ -202,7 +218,7 @@ function Fact({
   children: React.ReactNode;
 }) {
   return (
-    <div className="group rounded-xl border border-border/70 bg-surface-light/40 p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-border hover:bg-surface-light/70">
+    <div className="group rounded-xl border border-border/70 bg-surface-light/40 p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-border hover:bg-surface-light/70 motion-reduce:transition-none motion-reduce:hover:translate-y-0">
       <dt className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
         {icon}
         {label}

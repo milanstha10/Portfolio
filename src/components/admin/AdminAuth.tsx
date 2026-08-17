@@ -1,7 +1,7 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowLeft, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Loader2, ShieldCheck } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
 
@@ -20,47 +20,74 @@ function ActualLoginForm({
   needsSetup: boolean;
   queryClient: ReturnType<typeof useQueryClient>;
 }) {
+  const navigate = useNavigate();
+
   const getAuthStatus = useServerFn(authStatus);
+  const loginFn = useServerFn(login);
+  const setupAdminFn = useServerFn(setupAdmin);
 
   const [pending, setPending] = useState(false);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
+    if (pending) {
+      return;
+    }
+
     const formData = new FormData(event.currentTarget);
 
-    const email = String(formData.get("email") ?? "");
+    const email = String(formData.get("email") ?? "").trim();
+
     const password = String(formData.get("password") ?? "");
+
+    if (!email || !password) {
+      toast.error("Please enter your email and password.");
+      return;
+    }
 
     setPending(true);
 
     try {
       if (needsSetup) {
-        await setupAdmin({
+        await setupAdminFn({
           data: {
             email,
             password,
           },
         });
 
-        toast.success("Admin account created");
+        toast.success("Admin account created successfully");
       } else {
-        await login({
+        await loginFn({
           data: {
             email,
             password,
           },
         });
 
-        toast.success("Signed in");
+        toast.success("Signed in successfully");
       }
+
+      const status = await getAuthStatus();
 
       await queryClient.invalidateQueries({
         queryKey: ["auth-status"],
       });
 
-      await getAuthStatus();
+      if (!status.admin) {
+        throw new Error(
+          "Authentication succeeded, but the admin session was not created. Please check your session configuration.",
+        );
+      }
+
+      await navigate({
+        to: "/admin",
+        replace: true,
+      });
     } catch (error) {
+      console.error("[admin] authentication error", error);
+
       toast.error(needsSetup ? "Could not create admin" : "Sign-in failed", {
         description:
           error instanceof Error
@@ -100,7 +127,8 @@ function ActualLoginForm({
               type="email"
               required
               autoComplete="email"
-              className="mt-1.5 w-full rounded-lg border border-border bg-surface-light/50 px-3 py-2.5 text-sm outline-none focus:border-primary"
+              disabled={pending}
+              className="mt-1.5 w-full rounded-lg border border-border bg-surface-light/50 px-3 py-2.5 text-sm outline-none transition-colors focus:border-primary disabled:opacity-60"
             />
           </label>
 
@@ -115,15 +143,18 @@ function ActualLoginForm({
               required
               minLength={8}
               autoComplete={needsSetup ? "new-password" : "current-password"}
-              className="mt-1.5 w-full rounded-lg border border-border bg-surface-light/50 px-3 py-2.5 text-sm outline-none focus:border-primary"
+              disabled={pending}
+              className="mt-1.5 w-full rounded-lg border border-border bg-surface-light/50 px-3 py-2.5 text-sm outline-none transition-colors focus:border-primary disabled:opacity-60"
             />
           </label>
 
           <button
             type="submit"
             disabled={pending}
-            className="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground disabled:opacity-60"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground disabled:opacity-60"
           >
+            {pending && <Loader2 className="size-4 animate-spin" />}
+
             {pending
               ? "Please wait..."
               : needsSetup
@@ -134,7 +165,7 @@ function ActualLoginForm({
 
         <Link
           to="/"
-          className="mt-5 inline-flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground"
+          className="mt-5 inline-flex items-center gap-2 text-xs text-muted-foreground transition-colors hover:text-foreground"
         >
           <ArrowLeft className="size-3.5" />
           Back to portfolio

@@ -1,4 +1,11 @@
-import { Award, Calendar, ExternalLink, FileText, MapPin } from "lucide-react";
+import {
+  Award,
+  Calendar,
+  Download,
+  ExternalLink,
+  FileText,
+  MapPin,
+} from "lucide-react";
 
 import { EmptyState, Section } from "@/components/portfolio/section";
 import { Icon } from "@/components/ui/icon";
@@ -12,88 +19,107 @@ import {
 } from "@/lib/portfolio/content";
 
 function TimelineItem({ record, isLast }: { record: Rec; isLast: boolean }) {
-  const title = text(record["degree"]) || text(record["position"]);
-  const org = text(record["institution"]) || text(record["organization"]);
+  const title =
+    text(record["degree"]) ||
+    text(record["position"]) ||
+    text(record["title"], "Untitled");
+
+  const organization =
+    text(record["institution"]) || text(record["organization"]);
+
+  const university = text(record["university"]);
   const start = text(record["startYear"]) || text(record["startDate"]);
   const end = record["current"]
     ? "Present"
     : text(record["endYear"]) || text(record["endDate"]) || "—";
-  const tech = list(record["technologies"]);
+
+  const location = text(record["location"]);
+  const grade = text(record["grade"]);
+  const type = text(record["type"]);
+  const description = text(record["description"]);
+  const technologies = list(record["technologies"]);
 
   return (
     <li className="relative pl-8 sm:pl-10">
       <span
-        className="absolute left-1.75 top-2.5 z-10 size-3 rounded-full border-2 border-primary bg-background shadow-[0_0_0_4px_hsl(var(--background))]"
+        className="absolute left-1.5 top-2.5 z-10 size-3 rounded-full border-2 border-primary bg-background shadow-[0_0_0_4px_hsl(var(--background))] sm:left-1.75"
         aria-hidden
       />
 
       {!isLast ? (
         <span
-          className="absolute left-3 top-5 -bottom-5 w-px bg-linear-to-b from-primary/50 via-border to-border/30"
+          className="absolute bottom-0 left-3 top-5 w-px bg-linear-to-b from-primary/50 via-border to-border/30"
           aria-hidden
         />
       ) : null}
 
-      <div className="surface-card group p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md sm:p-6">
+      <article className="surface-card group p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md sm:p-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
             <h3 className="font-display text-base font-semibold leading-snug text-foreground sm:text-lg">
               {title}
             </h3>
 
-            {org ? (
-              <p className="mt-1 text-sm font-medium text-secondary">{org}</p>
+            {organization ? (
+              <p className="mt-1 text-sm font-medium text-secondary">
+                {organization}
+              </p>
             ) : null}
 
-            {text(record["university"]) ? (
+            {university ? (
               <p className="mt-0.5 text-xs text-muted-foreground">
-                {text(record["university"])}
+                {university}
               </p>
             ) : null}
           </div>
 
-          {(start || end) && (
+          {start || end ? (
             <span className="inline-flex w-fit shrink-0 items-center gap-1.5 rounded-lg border border-border bg-surface-light/50 px-2.5 py-1.5 font-mono text-[10px] text-muted-foreground">
               <Calendar className="size-3" aria-hidden />
-              {start} — {end}
-            </span>
-          )}
-        </div>
-
-        <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-xs text-muted-foreground">
-          {text(record["location"]) ? (
-            <span className="inline-flex items-center gap-1.5">
-              <MapPin className="size-3 text-secondary" aria-hidden />
-              {text(record["location"])}
+              <span>
+                {start || "—"} — {end}
+              </span>
             </span>
           ) : null}
-
-          {text(record["grade"]) ? (
-            <span>Grade: {text(record["grade"])}</span>
-          ) : null}
-
-          {text(record["type"]) ? <span>{text(record["type"])}</span> : null}
         </div>
 
-        {text(record["description"]) ? (
-          <p className="mt-4 max-w-3xl text-sm leading-6 text-muted-foreground">
-            {text(record["description"])}
+        {location || grade || type ? (
+          <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-xs text-muted-foreground">
+            {location ? (
+              <span className="inline-flex items-center gap-1.5">
+                <MapPin className="size-3 text-secondary" aria-hidden />
+                {location}
+              </span>
+            ) : null}
+
+            {grade ? <span>Grade: {grade}</span> : null}
+
+            {type ? <span>{type}</span> : null}
+          </div>
+        ) : null}
+
+        {description ? (
+          <p className="mt-4 max-w-3xl text-sm leading-6 text-muted-foreground wrap-break-word">
+            {description}
           </p>
         ) : null}
 
-        {tech.length ? (
-          <ul className="mt-4 flex flex-wrap gap-1.5">
-            {tech.map((item) => (
+        {technologies.length ? (
+          <ul
+            className="mt-4 flex flex-wrap gap-1.5"
+            aria-label={`${title} technologies`}
+          >
+            {technologies.map((technology) => (
               <li
-                key={item}
+                key={technology}
                 className="rounded-md border border-border bg-surface-light/40 px-2 py-1 font-mono text-[10px] text-muted-foreground transition-colors group-hover:border-border/80"
               >
-                {item}
+                {technology}
               </li>
             ))}
           </ul>
         ) : null}
-      </div>
+      </article>
     </li>
   );
 }
@@ -167,55 +193,64 @@ export function CertificationsSection({ data }: { data: PortfolioData }) {
         <EmptyState message="No certifications have been added yet." />
       ) : (
         <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-          {data.certifications.map((item, index) => (
-            <Reveal
-              key={idOf(item)}
-              className="surface-card group flex h-full flex-col p-5 transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-md sm:p-6"
-              delay={index * 60}
-            >
-              <div className="flex items-start justify-between gap-4">
-                <span className="grid size-10 shrink-0 place-items-center rounded-xl border border-border bg-surface-light transition-colors duration-300 group-hover:border-primary/30 group-hover:bg-primary/10">
-                  <Award className="size-5 text-accent" aria-hidden />
-                </span>
+          {data.certifications.map((item, index) => {
+            const name = text(item["name"], "Untitled certification");
+            const organization = text(item["organization"]);
+            const issueDate = text(item["issueDate"]);
+            const description = text(item["description"]);
+            const credentialUrl = text(item["credentialUrl"]);
 
-                {text(item["issueDate"]) ? (
-                  <span className="rounded-md border border-border bg-surface-light/40 px-2 py-1 font-mono text-[10px] text-muted-foreground">
-                    {text(item["issueDate"])}
+            return (
+              <Reveal
+                key={idOf(item)}
+                className="surface-card group flex h-full flex-col p-5 transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-md sm:p-6"
+                delay={index * 60}
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <span className="grid size-10 shrink-0 place-items-center rounded-xl border border-border bg-surface-light transition-colors duration-300 group-hover:border-primary/30 group-hover:bg-primary/10">
+                    <Award className="size-5 text-accent" aria-hidden />
                   </span>
+
+                  {issueDate ? (
+                    <span className="rounded-md border border-border bg-surface-light/40 px-2 py-1 font-mono text-[10px] text-muted-foreground">
+                      {issueDate}
+                    </span>
+                  ) : null}
+                </div>
+
+                <h3 className="mt-5 font-display text-base font-semibold leading-snug text-foreground">
+                  {name}
+                </h3>
+
+                {organization ? (
+                  <p className="mt-1.5 text-sm font-medium text-secondary">
+                    {organization}
+                  </p>
                 ) : null}
-              </div>
 
-              <h3 className="mt-5 font-display text-base font-semibold leading-snug text-foreground">
-                {text(item["name"])}
-              </h3>
+                {description ? (
+                  <p className="mt-3 flex-1 text-sm leading-6 text-muted-foreground wrap-break-word">
+                    {description}
+                  </p>
+                ) : (
+                  <div className="flex-1" />
+                )}
 
-              {text(item["organization"]) ? (
-                <p className="mt-1.5 text-sm font-medium text-secondary">
-                  {text(item["organization"])}
-                </p>
-              ) : null}
-
-              {text(item["description"]) ? (
-                <p className="mt-3 flex-1 text-sm leading-6 text-muted-foreground">
-                  {text(item["description"])}
-                </p>
-              ) : (
-                <div className="flex-1" />
-              )}
-
-              {text(item["credentialUrl"]) ? (
-                <a
-                  href={text(item["credentialUrl"])}
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  className="mt-5 inline-flex w-fit items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-muted-foreground transition-all duration-200 hover:border-primary/40 hover:bg-surface-light hover:text-foreground"
-                >
-                  View credential
-                  <ExternalLink className="size-3.5" aria-hidden />
-                </a>
-              ) : null}
-            </Reveal>
-          ))}
+                {credentialUrl ? (
+                  <a
+                    href={credentialUrl}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    aria-label={`View ${name} credential`}
+                    className="mt-5 inline-flex w-fit items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-muted-foreground transition-all duration-200 hover:border-primary/40 hover:bg-surface-light hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                  >
+                    View credential
+                    <ExternalLink className="size-3.5" aria-hidden />
+                  </a>
+                ) : null}
+              </Reveal>
+            );
+          })}
         </div>
       )}
     </Section>
@@ -223,7 +258,9 @@ export function CertificationsSection({ data }: { data: PortfolioData }) {
 }
 
 export function AchievementsSection({ data }: { data: PortfolioData }) {
-  if (data.achievements.length === 0) return null;
+  if (data.achievements.length === 0) {
+    return null;
+  }
 
   return (
     <Section
@@ -233,48 +270,56 @@ export function AchievementsSection({ data }: { data: PortfolioData }) {
       description="Highlights, events, competitions, and other accomplishments along the way."
     >
       <div className="grid gap-5 md:grid-cols-2">
-        {data.achievements.map((item, index) => (
-          <Reveal
-            key={idOf(item)}
-            className="surface-card group p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md sm:p-6"
-            delay={index * 60}
-          >
-            <div className="flex items-center justify-between gap-3">
-              <p className="font-mono text-[10px] font-medium tracking-wider text-accent uppercase">
-                {text(item["category"], "Achievement")}
-              </p>
+        {data.achievements.map((item, index) => {
+          const category = text(item["category"], "Achievement");
+          const date = text(item["date"]);
+          const title = text(item["title"], "Untitled achievement");
+          const organization = text(item["organization"]);
+          const description = text(item["description"]);
 
-              {text(item["date"]) ? (
-                <span className="font-mono text-[10px] text-muted-foreground">
-                  {text(item["date"])}
-                </span>
+          return (
+            <Reveal
+              key={idOf(item)}
+              className="surface-card group p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md sm:p-6"
+              delay={index * 60}
+            >
+              <div className="flex items-center justify-between gap-3">
+                <p className="font-mono text-[10px] font-medium uppercase tracking-wider text-accent">
+                  {category}
+                </p>
+
+                {date ? (
+                  <span className="font-mono text-[10px] text-muted-foreground">
+                    {date}
+                  </span>
+                ) : null}
+              </div>
+
+              <h3 className="mt-3 font-display text-base font-semibold leading-snug">
+                {title}
+              </h3>
+
+              {organization ? (
+                <p className="mt-1.5 text-sm text-secondary">{organization}</p>
               ) : null}
-            </div>
 
-            <h3 className="mt-3 font-display text-base font-semibold leading-snug">
-              {text(item["title"])}
-            </h3>
-
-            {text(item["organization"]) ? (
-              <p className="mt-1.5 text-sm text-secondary">
-                {text(item["organization"])}
-              </p>
-            ) : null}
-
-            {text(item["description"]) ? (
-              <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                {text(item["description"])}
-              </p>
-            ) : null}
-          </Reveal>
-        ))}
+              {description ? (
+                <p className="mt-3 text-sm leading-6 text-muted-foreground wrap-break-word">
+                  {description}
+                </p>
+              ) : null}
+            </Reveal>
+          );
+        })}
       </div>
     </Section>
   );
 }
 
 export function ServicesSection({ data }: { data: PortfolioData }) {
-  if (data.services.length === 0) return null;
+  if (data.services.length === 0) {
+    return null;
+  }
 
   return (
     <Section
@@ -284,28 +329,35 @@ export function ServicesSection({ data }: { data: PortfolioData }) {
       description="Areas where I can contribute as a student developer while continuing to strengthen my skills."
     >
       <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-        {data.services.map((item, index) => (
-          <Reveal
-            key={idOf(item)}
-            className="surface-card group p-5 transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-md sm:p-6"
-            delay={index * 60}
-          >
-            <span className="grid size-10 place-items-center rounded-xl border border-border bg-surface-light transition-colors duration-300 group-hover:border-primary/30 group-hover:bg-primary/10">
-              <Icon
-                name={text(item["icon"], "Sparkles")}
-                className="size-4 text-primary"
-              />
-            </span>
+        {data.services.map((item, index) => {
+          const title = text(item["title"], "Service");
+          const description = text(item["description"]);
 
-            <h3 className="mt-5 font-display text-base font-semibold">
-              {text(item["title"])}
-            </h3>
+          return (
+            <Reveal
+              key={idOf(item)}
+              className="surface-card group p-5 transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-md sm:p-6"
+              delay={index * 60}
+            >
+              <span className="grid size-10 place-items-center rounded-xl border border-border bg-surface-light transition-colors duration-300 group-hover:border-primary/30 group-hover:bg-primary/10">
+                <Icon
+                  name={text(item["icon"], "Sparkles")}
+                  className="size-4 text-primary"
+                />
+              </span>
 
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              {text(item["description"])}
-            </p>
-          </Reveal>
-        ))}
+              <h3 className="mt-5 font-display text-base font-semibold">
+                {title}
+              </h3>
+
+              {description ? (
+                <p className="mt-2 text-sm leading-6 text-muted-foreground wrap-break-word">
+                  {description}
+                </p>
+              ) : null}
+            </Reveal>
+          );
+        })}
       </div>
     </Section>
   );
@@ -333,7 +385,7 @@ export function ResumeSection({ data }: { data: PortfolioData }) {
               <FileText className="size-5 text-primary" aria-hidden />
             </span>
 
-            <div>
+            <div className="min-w-0">
               <p className="font-display text-base font-semibold sm:text-lg">
                 {url ? "Resume available" : "Resume not uploaded yet"}
               </p>
@@ -352,17 +404,21 @@ export function ResumeSection({ data }: { data: PortfolioData }) {
                 href={url}
                 target="_blank"
                 rel="noreferrer noopener"
-                className="inline-flex items-center justify-center rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:opacity-95 hover:shadow-md"
+                aria-label="Download resume"
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:opacity-95 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
               >
-                Download resume
+                <Download className="size-4" aria-hidden />
+                Download
               </a>
 
               <a
                 href={url}
                 target="_blank"
                 rel="noreferrer noopener"
-                className="inline-flex items-center justify-center rounded-lg border border-border px-4 py-2.5 text-sm font-medium transition-all duration-200 hover:border-border/80 hover:bg-surface-light"
+                aria-label="Preview resume"
+                className="inline-flex items-center justify-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm font-medium transition-all duration-200 hover:border-border/80 hover:bg-surface-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
               >
+                <ExternalLink className="size-4" aria-hidden />
                 Preview
               </a>
             </div>

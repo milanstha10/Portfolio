@@ -1,4 +1,20 @@
 import type { LucideIcon } from "lucide-react";
+import {
+  Award,
+  BadgeCheck,
+  Briefcase,
+  FolderKanban,
+  GraduationCap,
+  LayoutDashboard,
+  Layers,
+  Link2,
+  Mail,
+  Settings,
+  ShieldCheck,
+  Sparkles,
+  Trophy,
+  User,
+} from "lucide-react";
 
 import { COLLECTIONS } from "@/lib/portfolio/schema";
 
@@ -11,6 +27,36 @@ export const isCollectionKey = (value: SectionKey): value is CollectionKey => {
   return value in COLLECTIONS;
 };
 
+/**
+ * Lucide icons used by the admin navigation.
+ *
+ * Keeping this as a real component map avoids using:
+ *
+ *   "LayoutDashboard" as never
+ *
+ * which was only bypassing TypeScript.
+ */
+export const ADMIN_ICONS: Record<string, LucideIcon> = {
+  LayoutDashboard,
+  User,
+  Settings,
+  FolderKanban,
+  Sparkles,
+  GraduationCap,
+  Briefcase,
+  BadgeCheck,
+  Trophy,
+  Layers,
+  Link2,
+  Mail,
+  ShieldCheck,
+  Award,
+};
+
+export function getAdminIcon(name: string): LucideIcon {
+  return ADMIN_ICONS[name] ?? ShieldCheck;
+}
+
 export const sections: {
   key: SectionKey;
   label: string;
@@ -19,61 +65,61 @@ export const sections: {
   {
     key: "dashboard",
     label: "Dashboard",
-    icon: "LayoutDashboard" as never,
+    icon: LayoutDashboard,
   },
   {
     key: "profile",
     label: "Profile",
-    icon: "User" as never,
+    icon: User,
   },
   {
     key: "settings",
     label: "Site settings",
-    icon: "Settings" as never,
+    icon: Settings,
   },
   {
     key: "projects",
     label: "Projects",
-    icon: "FolderKanban" as never,
+    icon: FolderKanban,
   },
   {
     key: "skills",
     label: "Skills",
-    icon: "ShieldCheck" as never,
+    icon: Sparkles,
   },
   {
     key: "education",
     label: "Education",
-    icon: "GraduationCap" as never,
+    icon: GraduationCap,
   },
   {
     key: "experience",
     label: "Experience",
-    icon: "User" as never,
+    icon: Briefcase,
   },
   {
     key: "certifications",
     label: "Certifications",
-    icon: "ShieldCheck" as never,
+    icon: BadgeCheck,
   },
   {
     key: "achievements",
     label: "Achievements",
-    icon: "ShieldCheck" as never,
+    icon: Trophy,
   },
   {
     key: "services",
     label: "Services",
-    icon: "Settings" as never,
+    icon: Layers,
   },
   {
     key: "socialLinks",
     label: "Social links",
-    icon: "Link2" as never,
+    icon: Link2,
   },
   {
     key: "messages",
     label: "Messages",
-    icon: "Mail" as never,
+    icon: Mail,
   },
 ];

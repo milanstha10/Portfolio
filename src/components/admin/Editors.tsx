@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Check, Edit3, Loader2, Plus, Save, Trash2, X } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
+import type { z } from "zod";
 
 import {
   createRecord,
@@ -15,15 +16,36 @@ import {
 
 import {
   COLLECTIONS,
-  type FieldDef,
   PROFILE_FIELDS,
   SETTINGS_FIELDS,
+  SINGLETONS,
+  type FieldDef,
 } from "@/lib/portfolio/schema";
 
 import { idOf, text, type Rec } from "@/lib/portfolio/content";
 
 import type { CollectionKey } from "./types";
 import { PageHeader } from "./Dashboard";
+
+/* -------------------------------------------------------------------------- */
+/* Helpers                                                                    */
+/* -------------------------------------------------------------------------- */
+
+function getValidationMessage(error: unknown): string {
+  if (error && typeof error === "object" && "issues" in error) {
+    const zodError = error as z.ZodError;
+
+    const firstIssue = zodError.issues[0];
+
+    if (firstIssue?.message) {
+      return firstIssue.message;
+    }
+  }
+
+  return error instanceof Error
+    ? error.message
+    : "Please check the form fields.";
+}
 
 /* -------------------------------------------------------------------------- */
 /* Singleton editor                                                           */
@@ -45,7 +67,9 @@ export function SingletonEditor({
 
   const [pending, setPending] = useState(false);
 
-  const { data, isLoading, refetch } = useQuery({
+  const schema = SINGLETONS[apiKey].schema;
+
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["singleton", apiKey],
     queryFn: async () => {
       const result = await getSingleton({
@@ -74,8 +98,7 @@ export function SingletonEditor({
       await refetch();
     } catch (error) {
       toast.error(`Could not save ${title}`, {
-        description:
-          error instanceof Error ? error.message : "Please try again.",
+        description: getValidationMessage(error),
       });
     } finally {
       setPending(false);
@@ -83,11 +106,15 @@ export function SingletonEditor({
   }
 
   if (isLoading) {
+    return <LoadingMessage message={`Loading ${title.toLowerCase()}...`} />;
+  }
+
+  if (isError) {
     return (
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Loader2 className="size-4 animate-spin" />
-        Loading {title.toLowerCase()}...
-      </div>
+      <EditorError
+        message={`Could not load ${title.toLowerCase()}.`}
+        onRetry={() => refetch()}
+      />
     );
   }
 
@@ -98,6 +125,7 @@ export function SingletonEditor({
       <RecordForm
         title={`Edit ${title}`}
         fields={fields}
+        schema={schema}
         initialValues={data ?? {}}
         pending={pending}
         onCancel={() => undefined}
@@ -127,7 +155,7 @@ export function CollectionEditor({
   const [creating, setCreating] = useState(false);
   const [pending, setPending] = useState(false);
 
-  const { data, isLoading, refetch } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["records", collectionKey],
     queryFn: async () => {
       const result = await getRecords({
@@ -171,8 +199,7 @@ export function CollectionEditor({
       await refetch();
     } catch (error) {
       toast.error("Could not save record", {
-        description:
-          error instanceof Error ? error.message : "Please check the fields.",
+        description: getValidationMessage(error),
       });
     } finally {
       setPending(false);
@@ -180,6 +207,10 @@ export function CollectionEditor({
   }
 
   async function remove(record: Rec) {
+    if (pending) {
+      return;
+    }
+
     if (!window.confirm("Delete this record permanently?")) {
       return;
     }
@@ -199,12 +230,20 @@ export function CollectionEditor({
       await refetch();
     } catch (error) {
       toast.error("Could not delete record", {
-        description:
-          error instanceof Error ? error.message : "Please try again.",
+        description: getValidationMessage(error),
       });
     } finally {
       setPending(false);
     }
+  }
+
+  function closeEditor() {
+    if (pending) {
+      return;
+    }
+
+    setEditing(null);
+    setCreating(false);
   }
 
   return (
@@ -220,12 +259,10 @@ export function CollectionEditor({
             editing ? `Edit ${config.singular}` : `Create ${config.singular}`
           }
           fields={config.fields}
+          schema={config.schema}
           initialValues={editing ?? {}}
           pending={pending}
-          onCancel={() => {
-            setEditing(null);
-            setCreating(false);
-          }}
+          onCancel={closeEditor}
           onSave={save}
         />
       ) : (
@@ -234,7 +271,8 @@ export function CollectionEditor({
             <button
               type="button"
               onClick={() => setCreating(true)}
-              className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground"
+              disabled={pending}
+              className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-opacity disabled:opacity-60"
             >
               <Plus className="size-4" />
               Add {config.singular}
@@ -246,6 +284,11 @@ export function CollectionEditor({
               <div className="flex items-center justify-center p-12">
                 <Loader2 className="size-5 animate-spin text-muted-foreground" />
               </div>
+            ) : isError ? (
+              <EditorError
+                message={`Could not load ${config.label.toLowerCase()}.`}
+                onRetry={() => refetch()}
+              />
             ) : data && data.length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
@@ -256,13 +299,17 @@ export function CollectionEditor({
                         .map((field) => (
                           <th
                             key={field.name}
+                            scope="col"
                             className="whitespace-nowrap px-4 py-3 text-left font-medium"
                           >
                             {field.label}
                           </th>
                         ))}
 
-                      <th className="px-4 py-3 text-right font-medium">
+                      <th
+                        scope="col"
+                        className="px-4 py-3 text-right font-medium"
+                      >
                         Actions
                       </th>
                     </tr>
@@ -290,9 +337,10 @@ export function CollectionEditor({
                             <button
                               type="button"
                               onClick={() => setEditing(record)}
-                              className="rounded-lg border border-border p-2 hover:bg-surface-light"
+                              disabled={pending}
+                              className="rounded-lg border border-border p-2 transition-colors hover:bg-surface-light disabled:opacity-50"
                               title="Edit"
-                              aria-label="Edit"
+                              aria-label={`Edit ${config.singular}`}
                             >
                               <Edit3 className="size-4" />
                             </button>
@@ -301,9 +349,9 @@ export function CollectionEditor({
                               type="button"
                               onClick={() => remove(record)}
                               disabled={pending}
-                              className="rounded-lg border border-destructive/20 p-2 text-destructive hover:bg-destructive/10"
+                              className="rounded-lg border border-destructive/20 p-2 text-destructive transition-colors hover:bg-destructive/10 disabled:opacity-50"
                               title="Delete"
-                              aria-label="Delete"
+                              aria-label={`Delete ${config.singular}`}
                             >
                               <Trash2 className="size-4" />
                             </button>
@@ -337,6 +385,7 @@ export function CollectionEditor({
 export function RecordForm({
   title,
   fields,
+  schema,
   initialValues,
   pending,
   onCancel,
@@ -344,6 +393,7 @@ export function RecordForm({
 }: {
   title: string;
   fields: FieldDef[];
+  schema: z.ZodTypeAny;
   initialValues: Rec;
   pending: boolean;
   onCancel: () => void;
@@ -383,6 +433,10 @@ export function RecordForm({
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
+    if (pending) {
+      return;
+    }
+
     const prepared: Rec = {
       ...values,
     };
@@ -404,27 +458,44 @@ export function RecordForm({
       if (field.type === "number" && prepared[fieldName] !== "") {
         prepared[fieldName] = Number(prepared[fieldName]);
       }
+
+      if (field.type === "number" && prepared[fieldName] === "") {
+        delete prepared[fieldName];
+      }
     }
 
-    onSave(prepared);
+    const result = schema.safeParse(prepared);
+
+    if (!result.success) {
+      const firstIssue = result.error.issues[0];
+
+      toast.error("Please fix the form", {
+        description: firstIssue?.message ?? "One or more fields are invalid.",
+      });
+
+      return;
+    }
+
+    onSave(result.data as Rec);
   }
 
   return (
     <div className="mt-6 rounded-xl border border-border bg-surface-light/20 p-5 sm:p-7">
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex items-start justify-between gap-4">
         <div>
           <h2 className="font-display text-xl font-semibold">{title}</h2>
 
           <p className="mt-1 text-sm text-muted-foreground">
-            Changes are saved directly to MongoDB.
+            Changes are validated and saved to MongoDB.
           </p>
         </div>
 
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-lg border border-border p-2 hover:bg-surface-light"
-          aria-label="Close"
+          disabled={pending}
+          className="rounded-lg border border-border p-2 transition-colors hover:bg-surface-light disabled:opacity-50"
+          aria-label="Close editor"
         >
           <X className="size-4" />
         </button>
@@ -442,6 +513,7 @@ export function RecordForm({
                 key={field.name}
                 field={field}
                 value={values[field.name]}
+                disabled={pending}
                 onChange={(value) => update(field.name, value)}
               />
             );
@@ -452,7 +524,8 @@ export function RecordForm({
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-lg border border-border px-4 py-2.5 text-sm hover:bg-surface-light"
+            disabled={pending}
+            className="rounded-lg border border-border px-4 py-2.5 text-sm transition-colors hover:bg-surface-light disabled:opacity-50"
           >
             Cancel
           </button>
@@ -483,21 +556,30 @@ export function RecordForm({
 function FieldInput({
   field,
   value,
+  disabled,
   onChange,
 }: {
   field: FieldDef;
   value: unknown;
+  disabled: boolean;
   onChange: (value: unknown) => void;
 }) {
+  const inputId = `field-${field.name}`;
+
   const stringValue =
     typeof value === "string" || typeof value === "number" ? String(value) : "";
 
   if (field.type === "switch") {
     return (
-      <label className="flex items-center gap-3 rounded-lg border border-border p-4">
+      <label
+        htmlFor={inputId}
+        className="flex cursor-pointer items-center gap-3 rounded-lg border border-border p-4"
+      >
         <input
+          id={inputId}
           type="checkbox"
           checked={Boolean(value)}
+          disabled={disabled}
           onChange={(event) => onChange(event.target.checked)}
           className="size-4 accent-primary"
         />
@@ -517,13 +599,15 @@ function FieldInput({
 
   if (field.type === "select") {
     return (
-      <label className="block">
+      <label htmlFor={inputId} className="block">
         <span className="text-sm font-medium">{field.label}</span>
 
         <select
+          id={inputId}
           value={stringValue}
+          disabled={disabled}
           onChange={(event) => onChange(event.target.value)}
-          className="mt-1.5 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-primary"
+          className="mt-1.5 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm outline-none transition-colors focus:border-primary disabled:opacity-60"
         >
           <option value="">Select...</option>
 
@@ -547,11 +631,14 @@ function FieldInput({
     const arrayValue = Array.isArray(value) ? value : [];
 
     return (
-      <label className="block md:col-span-2">
+      <label htmlFor={inputId} className="block md:col-span-2">
         <span className="text-sm font-medium">{field.label}</span>
 
         <input
+          id={inputId}
+          type="text"
           value={arrayValue.join(", ")}
+          disabled={disabled}
           onChange={(event) =>
             onChange(
               event.target.value
@@ -561,7 +648,7 @@ function FieldInput({
             )
           }
           placeholder="React, TypeScript, MongoDB"
-          className="mt-1.5 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-primary"
+          className="mt-1.5 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm outline-none transition-colors focus:border-primary disabled:opacity-60"
         />
 
         <span className="mt-1 block text-xs text-muted-foreground">
@@ -575,19 +662,25 @@ function FieldInput({
   const isLarge = field.type === "textarea" || field.type === "richtext";
 
   return (
-    <label className={isLarge ? "block md:col-span-2" : "block"}>
+    <label
+      htmlFor={inputId}
+      className={isLarge ? "block md:col-span-2" : "block"}
+    >
       <span className="text-sm font-medium">{field.label}</span>
 
       {isLarge ? (
         <textarea
+          id={inputId}
           value={stringValue}
+          disabled={disabled}
           onChange={(event) => onChange(event.target.value)}
           placeholder={field.placeholder}
           rows={6}
-          className="mt-1.5 w-full resize-y rounded-lg border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-primary"
+          className="mt-1.5 w-full resize-y rounded-lg border border-border bg-background px-3 py-2.5 text-sm outline-none transition-colors focus:border-primary disabled:opacity-60"
         />
       ) : (
         <input
+          id={inputId}
           type={
             field.type === "url"
               ? "url"
@@ -598,9 +691,10 @@ function FieldInput({
                   : "text"
           }
           value={stringValue}
+          disabled={disabled}
           onChange={(event) => onChange(event.target.value)}
           placeholder={field.placeholder}
-          className="mt-1.5 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-primary"
+          className="mt-1.5 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm outline-none transition-colors focus:border-primary disabled:opacity-60"
         />
       )}
 
@@ -656,5 +750,40 @@ function CellValue({ value, field }: { value: unknown; field: FieldDef }) {
     <span className="block max-w-xs truncate" title={result}>
       {result || <span className="text-muted-foreground">—</span>}
     </span>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* Shared states                                                              */
+/* -------------------------------------------------------------------------- */
+
+function LoadingMessage({ message }: { message: string }) {
+  return (
+    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+      <Loader2 className="size-4 animate-spin" />
+      {message}
+    </div>
+  );
+}
+
+function EditorError({
+  message,
+  onRetry,
+}: {
+  message: string;
+  onRetry: () => void;
+}) {
+  return (
+    <div className="mt-6 rounded-xl border border-destructive/20 bg-destructive/5 p-6">
+      <p className="text-sm font-medium">{message}</p>
+
+      <button
+        type="button"
+        onClick={onRetry}
+        className="mt-4 rounded-lg border border-border px-3 py-2 text-sm transition-colors hover:bg-surface-light"
+      >
+        Try again
+      </button>
+    </div>
   );
 }

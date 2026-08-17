@@ -19,6 +19,8 @@ export function Contact({ data }: { data: PortfolioData }) {
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
+    if (pending) return;
+
     const form = event.currentTarget;
     const values = Object.fromEntries(new FormData(form).entries());
     const parsed = messageSchema.safeParse(values);
@@ -27,7 +29,7 @@ export function Contact({ data }: { data: PortfolioData }) {
       const next: Record<string, string> = {};
 
       for (const issue of parsed.error.issues) {
-        const key = String(issue.path[0]);
+        const key = String(issue.path[0] ?? "form");
 
         if (!next[key]) {
           next[key] = issue.message;
@@ -35,6 +37,17 @@ export function Contact({ data }: { data: PortfolioData }) {
       }
 
       setErrors(next);
+
+      const firstError = Object.keys(next)[0];
+
+      if (firstError) {
+        window.requestAnimationFrame(() => {
+          document
+            .getElementById(`contact-${firstError}`)
+            ?.focus({ preventScroll: false });
+        });
+      }
+
       return;
     }
 
@@ -58,8 +71,8 @@ export function Contact({ data }: { data: PortfolioData }) {
     }
   }
 
-  const email = text(profile["email"]);
-  const location = text(profile["location"]);
+  const email = text(profile["email"]).trim();
+  const location = text(profile["location"]).trim();
 
   return (
     <Section
@@ -72,7 +85,7 @@ export function Contact({ data }: { data: PortfolioData }) {
         <Reveal className="surface-card relative overflow-hidden p-6 sm:p-8">
           <div
             className="pointer-events-none absolute -left-24 -top-24 size-64 rounded-full bg-primary/5 blur-3xl"
-            aria-hidden
+            aria-hidden="true"
           />
 
           <div className="relative">
@@ -87,8 +100,11 @@ export function Contact({ data }: { data: PortfolioData }) {
                 </h3>
               </div>
 
-              <span className="grid size-10 shrink-0 place-items-center rounded-xl border border-border/70 bg-surface-light/60">
-                <Mail className="size-4 text-primary" aria-hidden />
+              <span
+                className="grid size-10 shrink-0 place-items-center rounded-xl border border-border/70 bg-surface-light/60"
+                aria-hidden="true"
+              >
+                <Mail className="size-4 text-primary" />
               </span>
             </div>
 
@@ -103,10 +119,13 @@ export function Contact({ data }: { data: PortfolioData }) {
                 <li>
                   <a
                     href={`mailto:${email}`}
-                    className="group flex items-center gap-3 rounded-xl border border-border/60 bg-surface-light/30 p-3.5 transition-all duration-200 hover:border-border hover:bg-surface-light"
+                    className="group flex items-center gap-3 rounded-xl border border-border/60 bg-surface-light/30 p-3.5 transition-all duration-200 hover:border-border hover:bg-surface-light motion-reduce:transition-none"
                   >
-                    <span className="grid size-9 shrink-0 place-items-center rounded-lg border border-border/70 bg-surface">
-                      <Mail className="size-4 text-primary" aria-hidden />
+                    <span
+                      className="grid size-9 shrink-0 place-items-center rounded-lg border border-border/70 bg-surface"
+                      aria-hidden="true"
+                    >
+                      <Mail className="size-4 text-primary" />
                     </span>
 
                     <span className="min-w-0 flex-1">
@@ -120,8 +139,8 @@ export function Contact({ data }: { data: PortfolioData }) {
                     </span>
 
                     <ArrowUpRight
-                      className="size-4 text-muted-foreground/50 transition-all duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-foreground"
-                      aria-hidden
+                      className="size-4 text-muted-foreground/50 transition-all duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-foreground motion-reduce:transition-none motion-reduce:group-hover:translate-x-0 motion-reduce:group-hover:translate-y-0"
+                      aria-hidden="true"
                     />
                   </a>
                 </li>
@@ -130,16 +149,19 @@ export function Contact({ data }: { data: PortfolioData }) {
               {location ? (
                 <li>
                   <div className="flex items-center gap-3 rounded-xl border border-border/60 bg-surface-light/30 p-3.5">
-                    <span className="grid size-9 shrink-0 place-items-center rounded-lg border border-border/70 bg-surface">
-                      <MapPin className="size-4 text-secondary" aria-hidden />
+                    <span
+                      className="grid size-9 shrink-0 place-items-center rounded-lg border border-border/70 bg-surface"
+                      aria-hidden="true"
+                    >
+                      <MapPin className="size-4 text-secondary" />
                     </span>
 
-                    <span>
+                    <span className="min-w-0">
                       <span className="block text-[10px] uppercase tracking-wider text-muted-foreground">
                         Location
                       </span>
 
-                      <span className="mt-0.5 block text-sm font-medium text-foreground">
+                      <span className="mt-0.5 block wrap-break-word text-sm font-medium text-foreground">
                         {location}
                       </span>
                     </span>
@@ -148,38 +170,43 @@ export function Contact({ data }: { data: PortfolioData }) {
               ) : null}
             </ul>
 
-            {data.socialLinks.length ? (
+            {data.socialLinks.length > 0 ? (
               <div className="relative mt-7 border-t border-border/70 pt-6">
                 <p className="text-[10px] font-medium uppercase tracking-[0.15em] text-muted-foreground">
                   Find me online
                 </p>
 
                 <div className="mt-3 flex flex-wrap gap-2">
-                  {data.socialLinks.map((link) => {
-                    const platform = text(link["platform"]);
-                    const url = text(link["url"]);
+                  {data.socialLinks.map((link, index) => {
+                    const platform = text(link["platform"]).trim();
+                    const url = text(link["url"]).trim();
 
                     if (!url) return null;
 
                     return (
                       <a
-                        key={idOf(link)}
+                        key={idOf(link) || `${platform}-${index}`}
                         href={url}
                         target="_blank"
-                        rel="noreferrer noopener"
-                        aria-label={platform}
-                        className="group inline-flex items-center gap-2 rounded-lg border border-border/70 bg-surface-light/30 px-3 py-2 text-xs font-medium text-muted-foreground transition-all duration-200 hover:-translate-y-0.5 hover:border-border hover:bg-surface-light hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                        rel="noopener noreferrer"
+                        aria-label={
+                          platform
+                            ? `Visit ${platform}`
+                            : "Visit social profile"
+                        }
+                        className="group inline-flex items-center gap-2 rounded-lg border border-border/70 bg-surface-light/30 px-3 py-2 text-xs font-medium text-muted-foreground transition-all duration-200 hover:-translate-y-0.5 hover:border-border hover:bg-surface-light hover:text-foreground motion-reduce:transition-none motion-reduce:hover:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                       >
                         <Icon
                           name={text(link["icon"], "Link")}
                           className="size-3.5"
+                          aria-hidden="true"
                         />
 
-                        {platform}
+                        <span>{platform || "Profile"}</span>
 
                         <ArrowUpRight
-                          className="size-3 text-muted-foreground/40 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
-                          aria-hidden
+                          className="size-3 text-muted-foreground/40 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0 motion-reduce:group-hover:translate-y-0"
+                          aria-hidden="true"
                         />
                       </a>
                     );
@@ -199,7 +226,7 @@ export function Contact({ data }: { data: PortfolioData }) {
         >
           <div
             className="pointer-events-none absolute -right-24 -top-24 size-64 rounded-full bg-secondary/5 blur-3xl"
-            aria-hidden
+            aria-hidden="true"
           />
 
           <div className="relative">
@@ -223,8 +250,9 @@ export function Contact({ data }: { data: PortfolioData }) {
                 name="name"
                 label="Name"
                 placeholder="Your name"
-                error={errors["name"]}
+                {...(errors["name"] ? { error: errors["name"] } : {})}
                 disabled={pending}
+                autoComplete="name"
               />
 
               <Field
@@ -232,8 +260,9 @@ export function Contact({ data }: { data: PortfolioData }) {
                 label="Email"
                 type="email"
                 placeholder="you@example.com"
-                error={errors["email"]}
+                {...(errors["email"] ? { error: errors["email"] } : {})}
                 disabled={pending}
+                autoComplete="email"
               />
             </div>
 
@@ -242,8 +271,9 @@ export function Contact({ data }: { data: PortfolioData }) {
                 name="subject"
                 label="Subject"
                 placeholder="What would you like to discuss?"
-                error={errors["subject"]}
+                {...(errors["subject"] ? { error: errors["subject"] } : {})}
                 disabled={pending}
+                autoComplete="off"
               />
             </div>
 
@@ -253,7 +283,7 @@ export function Contact({ data }: { data: PortfolioData }) {
                 label="Message"
                 placeholder="Tell me a little about your project, opportunity, or idea..."
                 textarea
-                error={errors["message"]}
+                {...(errors["message"] ? { error: errors["message"] } : {})}
                 disabled={pending}
               />
             </div>
@@ -266,12 +296,17 @@ export function Contact({ data }: { data: PortfolioData }) {
               <button
                 type="submit"
                 disabled={pending}
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:opacity-95 disabled:pointer-events-none disabled:translate-y-0 disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                aria-disabled={pending}
+                aria-busy={pending}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:opacity-95 disabled:pointer-events-none disabled:translate-y-0 disabled:opacity-60 motion-reduce:transition-none motion-reduce:hover:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
               >
                 {pending ? (
-                  <Loader2 className="size-4 animate-spin" aria-hidden />
+                  <Loader2
+                    className="size-4 animate-spin motion-reduce:animate-none"
+                    aria-hidden="true"
+                  />
                 ) : (
-                  <Send className="size-4" aria-hidden />
+                  <Send className="size-4" aria-hidden="true" />
                 )}
 
                 {pending ? "Sending..." : "Send message"}
@@ -292,29 +327,35 @@ function Field({
   placeholder,
   error,
   disabled,
+  autoComplete,
 }: {
   name: string;
   label: string;
   type?: string;
   textarea?: boolean;
   placeholder?: string;
-  error?: string | undefined;
+  error?: string;
   disabled?: boolean;
+  autoComplete?: string;
 }) {
   const id = `contact-${name}`;
+  const errorId = `${id}-error`;
 
   const shared =
-    "mt-1.5 w-full rounded-xl border bg-surface-light/40 px-3.5 py-3 text-sm text-foreground outline-none transition-all duration-200 placeholder:text-muted-foreground/50 focus:bg-surface-light focus:ring-2 disabled:cursor-not-allowed disabled:opacity-60";
+    "mt-1.5 w-full rounded-xl border bg-surface-light/40 px-3.5 py-3 text-sm text-foreground outline-none transition-all duration-200 placeholder:text-muted-foreground/50 focus:bg-surface-light focus:ring-2 disabled:cursor-not-allowed disabled:opacity-60 motion-reduce:transition-none";
 
   const borderClass = error
     ? "border-destructive/70 focus:border-destructive focus:ring-destructive/10"
     : "border-border/70 focus:border-primary focus:ring-primary/10";
 
   return (
-    <label htmlFor={id} className="block text-sm">
-      <span className="text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+    <div>
+      <label
+        htmlFor={id}
+        className="block text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground"
+      >
         {label}
-      </span>
+      </label>
 
       {textarea ? (
         <textarea
@@ -325,7 +366,7 @@ function Field({
           disabled={disabled}
           className={`${shared} ${borderClass} resize-y`}
           aria-invalid={Boolean(error)}
-          aria-describedby={error ? `${id}-error` : undefined}
+          aria-describedby={error ? errorId : undefined}
         />
       ) : (
         <input
@@ -334,20 +375,22 @@ function Field({
           type={type}
           placeholder={placeholder}
           disabled={disabled}
+          autoComplete={autoComplete}
           className={`${shared} ${borderClass}`}
           aria-invalid={Boolean(error)}
-          aria-describedby={error ? `${id}-error` : undefined}
+          aria-describedby={error ? errorId : undefined}
         />
       )}
 
       {error ? (
-        <span
-          id={`${id}-error`}
-          className="mt-1.5 block text-xs text-destructive"
+        <p
+          id={errorId}
+          className="mt-1.5 text-xs text-destructive"
+          role="alert"
         >
           {error}
-        </span>
+        </p>
       ) : null}
-    </label>
+    </div>
   );
 }

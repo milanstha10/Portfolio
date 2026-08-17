@@ -81,13 +81,14 @@ function Index() {
 
 function Footer({ data }: { data: PortfolioData }) {
   const name = text(data.profile?.["name"], "[YOUR NAME]");
+
   return (
     <footer className="border-t border-border py-10">
       <div className="container-page flex flex-col items-center justify-between gap-4 sm:flex-row">
         <p className="text-sm text-muted-foreground">
-          © {new Date().getFullYear()} {name}. Built with React, Tailwind CSS
-          and MongoDB.
+          © {new Date().getFullYear()} {name}. All rights reserved.
         </p>
+
         <div className="flex flex-wrap gap-3">
           {data.socialLinks.map((link) => (
             <a
@@ -97,7 +98,7 @@ function Footer({ data }: { data: PortfolioData }) {
               rel="noreferrer noopener"
               className="text-sm text-muted-foreground transition-colors hover:text-foreground"
             >
-              {text(link["platform"])}
+              {text(link["label"])}
             </a>
           ))}
         </div>

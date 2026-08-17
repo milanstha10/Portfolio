@@ -1,5 +1,5 @@
 import { FileText, Github, Linkedin, Menu, X } from "lucide-react";
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 
 import { NAV_LINKS, text, type PortfolioData } from "@/lib/portfolio/content";
 
@@ -15,15 +15,18 @@ export function Navbar({ data }: { data: PortfolioData }) {
   const githubUrl = text(profile["github"]);
   const linkedinUrl = text(profile["linkedin"]);
 
-  const initials =
-    name
-      .replace(/[[\]]/g, "")
-      .split(/\s+/)
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((part) => part[0])
-      .join("")
-      .toUpperCase() || "•";
+  const initials = useMemo(
+    () =>
+      name
+        .replace(/[[\]]/g, "")
+        .split(/\s+/)
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part[0])
+        .join("")
+        .toUpperCase() || "•",
+    [name],
+  );
 
   useEffect(() => {
     const onScroll = () => {
@@ -42,7 +45,7 @@ export function Navbar({ data }: { data: PortfolioData }) {
   useEffect(() => {
     const sections = NAV_LINKS.map((link) =>
       document.getElementById(link.id),
-    ).filter(Boolean) as HTMLElement[];
+    ).filter((section): section is HTMLElement => Boolean(section));
 
     if (!sections.length) return;
 
@@ -50,14 +53,23 @@ export function Navbar({ data }: { data: PortfolioData }) {
       (entries) => {
         const visibleSections = entries
           .filter((entry) => entry.isIntersecting)
-          .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+          .sort((a, b) => {
+            const aDistance = Math.abs(
+              a.boundingClientRect.top - window.innerHeight * 0.3,
+            );
+            const bDistance = Math.abs(
+              b.boundingClientRect.top - window.innerHeight * 0.3,
+            );
+
+            return aDistance - bDistance;
+          });
 
         if (visibleSections[0]) {
           setActiveSection(visibleSections[0].target.id);
         }
       },
       {
-        rootMargin: "-25% 0px -60% 0px",
+        rootMargin: "-20% 0px -60% 0px",
         threshold: [0, 0.1, 0.25, 0.5, 0.75, 1],
       },
     );
@@ -70,11 +82,25 @@ export function Navbar({ data }: { data: PortfolioData }) {
   }, []);
 
   useEffect(() => {
+    const onResize = () => {
+      if (window.innerWidth >= 1024) {
+        setOpen(false);
+      }
+    };
+
+    window.addEventListener("resize", onResize);
+
+    return () => {
+      window.removeEventListener("resize", onResize);
+    };
+  }, []);
+
+  useEffect(() => {
     if (!open) {
-      document.body.style.overflow = "";
       return;
     }
 
+    const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
     const onKeyDown = (event: KeyboardEvent) => {
@@ -86,7 +112,7 @@ export function Navbar({ data }: { data: PortfolioData }) {
     window.addEventListener("keydown", onKeyDown);
 
     return () => {
-      document.body.style.overflow = "";
+      document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", onKeyDown);
     };
   }, [open]);
@@ -114,7 +140,7 @@ export function Navbar({ data }: { data: PortfolioData }) {
           className="group flex min-w-0 items-center gap-2.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
         >
           <span
-            aria-hidden
+            aria-hidden="true"
             className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary font-mono text-xs font-bold text-primary-foreground shadow-sm transition-all duration-200 group-hover:scale-105 group-hover:shadow-md"
           >
             {initials}
@@ -133,6 +159,7 @@ export function Navbar({ data }: { data: PortfolioData }) {
               <li key={link.id}>
                 <a
                   href={`#${link.id}`}
+                  aria-current={isActive ? "page" : undefined}
                   className={`relative block rounded-lg px-3.5 py-2 text-sm transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                     isActive
                       ? "bg-surface-light font-medium text-foreground shadow-sm"
@@ -142,7 +169,7 @@ export function Navbar({ data }: { data: PortfolioData }) {
                   {link.label}
 
                   <span
-                    aria-hidden
+                    aria-hidden="true"
                     className={`absolute bottom-0.5 left-1/2 h-0.5 -translate-x-1/2 rounded-full bg-primary transition-all duration-200 ${
                       isActive ? "w-4 opacity-100" : "w-0 opacity-0"
                     }`}
@@ -158,20 +185,20 @@ export function Navbar({ data }: { data: PortfolioData }) {
             <a
               href={resumeUrl}
               target="_blank"
-              rel="noreferrer noopener"
-              className="hidden items-center gap-2 rounded-lg bg-primary px-3.5 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:opacity-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:inline-flex"
+              rel="noopener noreferrer"
+              className="hidden items-center gap-2 rounded-lg bg-primary px-3.5 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:opacity-95 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:inline-flex"
             >
-              <FileText className="size-4" aria-hidden />
+              <FileText className="size-4" aria-hidden="true" />
               <span>Resume</span>
             </a>
           ) : null}
 
           <IconLink href={githubUrl} label="GitHub">
-            <Github className="size-4" aria-hidden />
+            <Github className="size-4" aria-hidden="true" />
           </IconLink>
 
           <IconLink href={linkedinUrl} label="LinkedIn">
-            <Linkedin className="size-4" aria-hidden />
+            <Linkedin className="size-4" aria-hidden="true" />
           </IconLink>
 
           <button
@@ -182,14 +209,10 @@ export function Navbar({ data }: { data: PortfolioData }) {
             onClick={() => setOpen((value) => !value)}
             className="inline-flex size-9 items-center justify-center rounded-lg border border-border/70 bg-surface/50 text-muted-foreground transition-all duration-200 hover:border-border hover:bg-surface-light hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 lg:hidden"
           >
-            <span className="sr-only">
-              {open ? "Close navigation menu" : "Open navigation menu"}
-            </span>
-
             {open ? (
-              <X className="size-4" aria-hidden />
+              <X className="size-4" aria-hidden="true" />
             ) : (
-              <Menu className="size-4" aria-hidden />
+              <Menu className="size-4" aria-hidden="true" />
             )}
           </button>
         </div>
@@ -197,7 +220,6 @@ export function Navbar({ data }: { data: PortfolioData }) {
 
       <div
         id={menuId}
-        aria-hidden={!open}
         className={`grid overflow-hidden transition-[grid-template-rows,opacity] duration-300 ease-out lg:hidden ${
           open
             ? "grid-rows-[1fr] opacity-100"
@@ -207,7 +229,7 @@ export function Navbar({ data }: { data: PortfolioData }) {
         <div className="min-h-0 overflow-hidden">
           <div className="border-t border-border/70 bg-background/95 backdrop-blur-2xl">
             <div className="container-page py-4">
-              <ul className="grid gap-1">
+              <ul className="grid gap-1" aria-label="Mobile navigation">
                 {NAV_LINKS.map((link) => {
                   const isActive = activeSection === link.id;
 
@@ -217,6 +239,7 @@ export function Navbar({ data }: { data: PortfolioData }) {
                         href={`#${link.id}`}
                         onClick={closeMenu}
                         tabIndex={open ? 0 : -1}
+                        aria-current={isActive ? "page" : undefined}
                         className={`flex items-center justify-between rounded-xl px-3.5 py-3 text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                           isActive
                             ? "bg-surface-light text-foreground"
@@ -226,7 +249,7 @@ export function Navbar({ data }: { data: PortfolioData }) {
                         <span>{link.label}</span>
 
                         <span
-                          aria-hidden
+                          aria-hidden="true"
                           className={`text-xs transition-transform duration-200 ${
                             isActive
                               ? "translate-x-0 text-primary"
@@ -245,12 +268,12 @@ export function Navbar({ data }: { data: PortfolioData }) {
                     <a
                       href={resumeUrl}
                       target="_blank"
-                      rel="noreferrer noopener"
+                      rel="noopener noreferrer"
                       onClick={closeMenu}
                       tabIndex={open ? 0 : -1}
                       className="flex items-center justify-center gap-2 rounded-xl bg-primary px-3.5 py-3 text-sm font-medium text-primary-foreground shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:opacity-95 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                     >
-                      <FileText className="size-4" aria-hidden />
+                      <FileText className="size-4" aria-hidden="true" />
                       Resume
                     </a>
                   </li>
@@ -269,7 +292,7 @@ export function Navbar({ data }: { data: PortfolioData }) {
                     onClick={closeMenu}
                     disabled={!open}
                   >
-                    <Github className="size-4" aria-hidden />
+                    <Github className="size-4" aria-hidden="true" />
                   </MobileIconLink>
 
                   <MobileIconLink
@@ -278,7 +301,7 @@ export function Navbar({ data }: { data: PortfolioData }) {
                     onClick={closeMenu}
                     disabled={!open}
                   >
-                    <Linkedin className="size-4" aria-hidden />
+                    <Linkedin className="size-4" aria-hidden="true" />
                   </MobileIconLink>
                 </div>
               ) : null}
@@ -305,7 +328,7 @@ function IconLink({
     <a
       href={href}
       target="_blank"
-      rel="noreferrer noopener"
+      rel="noopener noreferrer"
       aria-label={label}
       className="hidden size-9 items-center justify-center rounded-lg border border-transparent text-muted-foreground transition-all duration-200 hover:border-border/70 hover:bg-surface-light hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:inline-flex"
     >
@@ -333,7 +356,7 @@ function MobileIconLink({
     <a
       href={href}
       target="_blank"
-      rel="noreferrer noopener"
+      rel="noopener noreferrer"
       aria-label={label}
       onClick={onClick}
       tabIndex={disabled ? -1 : 0}

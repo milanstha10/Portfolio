@@ -1,13 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2 } from "lucide-react";
+import { Loader2, RefreshCw } from "lucide-react";
 
 import { dashboardStats } from "@/lib/portfolio/api.functions";
 
 export function Dashboard() {
   const getStats = useServerFn(dashboardStats);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["dashboard-stats"],
     queryFn: () => getStats(),
   });
@@ -35,6 +35,23 @@ export function Dashboard() {
         <div className="mt-8 flex items-center gap-2 text-sm text-muted-foreground">
           <Loader2 className="size-4 animate-spin" />
           Loading statistics...
+        </div>
+      ) : isError ? (
+        <div className="mt-8 rounded-xl border border-destructive/20 bg-destructive/5 p-6">
+          <p className="font-medium">Could not load dashboard statistics.</p>
+
+          <p className="mt-1 text-sm text-muted-foreground">
+            Check your database connection and try again.
+          </p>
+
+          <button
+            type="button"
+            onClick={() => refetch()}
+            className="mt-4 inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm hover:bg-surface-light"
+          >
+            <RefreshCw className="size-4" />
+            Try again
+          </button>
         </div>
       ) : (
         <>
