@@ -294,7 +294,7 @@ export function Contact({ data }: { data: PortfolioData }) {
 
             <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-[11px] leading-5 text-muted-foreground">
-                Your message is handled securely through the portfolio backend.
+                Your message is handled securely.
               </p>
 
               <button

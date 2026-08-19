@@ -244,7 +244,6 @@ export async function getDashboardStats() {
     "certifications",
     "achievements",
     "services",
-    "socialLinks",
     "messages",
   ] as const;
 
